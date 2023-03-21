@@ -1,0 +1,131 @@
+/* Root */
+.root {
+    -fx-background-color: #202020;
+}
+
+/* Menu bar */
+.menu-bar {
+    -fx-background-color: #303030;
+    -fx-text-fill: #f0f0f0;
+}
+
+.menu-bar .label {
+    -fx-text-fill: #f0f0f0;
+}
+
+.menu-item .label {
+    -fx-text-fill: #303030;
+}
+
+.menu {
+    -fx-text-fill: #f0f0f0;
+}
+
+.menu-bar .menu-item:disabled {
+    -fx-opacity: 1.0;
+    -fx-text-fill: #808080;
+}
+
+.menu-bar .menu-item:disabled .label {
+    -fx-text-fill: #808080;
+}
+
+/* Sidebar */
+.sidebar {
+    -fx-background-color: #1c1c1c;
+}
+
+.sidebar .button-icon {
+    -fx-background-color: transparent;
+    -fx-text-fill: #f0f0f0;
+    -fx-border-color: #303030;
+}
+
+.sidebar .button-icon:hover {
+    -fx-background-color: #303030;
+}
+
+/* Content */
+.stack-pane {
+    -fx-background-color: #282828;
+    -fx-padding: 50px;
+}
+
+/* Buttons */
+.button {
+    -fx-background-color: #505050;
+    -fx-text-fill: #f0f0f0;
+    -fx-pref-width: 40;
+    -fx-pref-height: 40;
+}
+
+.button:hover {
+    -fx-background-color: #606060;
+}
+
+.button:pressed {
+    -fx-background-color: #404040;
+    -fx-scale-x: 0.9;
+    -fx-scale-y: 0.9;
+}
+
+.button-icon:pressed {
+    -fx-background-color: #404040;
+}
+
+.glyph-icon {
+    -fx-fill: #f0f0f0;
+}
+
+/* Scroll panes */
+.scroll-pane {
+    -fx-fit-to-width: true;
+    -fx-fit-to-height: true;
+    -fx-hbar-policy: never;
+    -fx-vbar-policy: as-needed;
+}
+
+.scroll-pane .corner {
+    -fx-background-color: #303030;
+}
+
+.scroll-bar {
+    -fx-background-color: #303030;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #505050;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #606060;
+}
+
+.scroll-bar .thumb:pressed {
+    -fx-background-color: #404040;
+}
+
+.scroll-bar .track {
+    -fx-background-color: #404040;
+}
+
+/* Artboards */
+.artboards {
+    -fx-spacing: 40px;
+    -fx-alignment: center;
+}
+
+.artboard {
+    -fx-padding: 20px;
+    -fx-margin: 10px;
+}
+
+/* Text Pane */
+.text-pane {
+    -fx-background-color: #303030;
+    -fx-text-fill: #f0f0f0;
+    -fx-font-size: 14px;
+    -fx-padding: 18px 50px 18px 50px;
+    -fx-text-alignment: right;
+}
+
