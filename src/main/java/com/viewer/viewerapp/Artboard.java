@@ -126,5 +126,4 @@ public class Artboard extends GridPane {
     public ImageView getImageView() {
         return imageView;
     }
-
 }

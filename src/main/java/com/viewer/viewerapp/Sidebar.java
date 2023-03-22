@@ -6,7 +6,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 
@@ -16,7 +15,6 @@ import static com.viewer.viewerapp.ImageHandler.artboard2;
 
 public class Sidebar extends VBox {
     static ImageView newView;
-    private Pane pane;
 
     public Sidebar() {
         super();
@@ -40,7 +38,7 @@ public class Sidebar extends VBox {
         getChildren().addAll(selectButton, zoomButton, cropButton, flipHButton, flipVButton, rotateButton, rSelectorButton);
 
         selectButton.setOnAction(event -> {
-            if (artboard2 != null) {
+            if (artboard2.getImageView() != null) {
                 if (artboard2.getChildren().size() > 0) {
                     artboard2.getChildren().remove(artboard2.getChildren().size() - 1);
                 }
@@ -48,7 +46,7 @@ public class Sidebar extends VBox {
         });
 
         flipHButton.setOnAction(event -> {
-            if (artboard2 != null) {
+            if (artboard2.getImageView() != null) {
                 try {
                     FlipperFX.Horfrip(newView);
                 } catch (IOException e) {
@@ -58,7 +56,7 @@ public class Sidebar extends VBox {
         });
 
         flipVButton.setOnAction(event -> {
-            if (artboard2 != null) {
+            if (artboard2.getImageView() != null) {
                 try {
                     FlipperFX.VertFlip(newView);
                 } catch (IOException e) {
@@ -67,7 +65,11 @@ public class Sidebar extends VBox {
             }
         });
 
-
+        cropButton.setOnAction(event -> {
+            if (artboard2.getImageView() != null) {
+                Crop.crop(newView);
+            }
+        });
     }
 
     private Button createButton(String tooltipText, String glyphName) {

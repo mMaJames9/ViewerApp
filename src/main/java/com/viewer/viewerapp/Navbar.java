@@ -4,6 +4,8 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 
+import static com.viewer.viewerapp.ImageHandler.artboard2;
+
 public class Navbar extends MenuBar {
 
     public Navbar(ImageHandler imageHandler) {
@@ -13,7 +15,13 @@ public class Navbar extends MenuBar {
         this.getMenus().addAll(fileMenu, editMenu);
 
         fileMenu.getItems().get(0).setOnAction(event -> imageHandler.choosePicture());
-        fileMenu.getItems().get(1).setOnAction(event -> imageHandler.saveFile());
+
+        fileMenu.getItems().get(1).setOnAction(event -> {
+            if (artboard2.getImageView() != null) {
+                imageHandler.saveFile();
+            }
+        });
+
         fileMenu.getItems().get(2).setOnAction(event -> System.exit(0));
     }
 
