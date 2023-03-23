@@ -27,7 +27,7 @@ public class ImageHandler {
     private static final ImageFileFilter imageFileFilter = new ImageFileFilter();
     private static final int INTENSITY_SCALAR = 3;
     static Artboard artboard2;
-    private static  Image image;
+     static  Image image;
     static PixelReader pixelReader;
 
     public static Image getImage() {

@@ -35,18 +35,14 @@ public class ColorizeSegment {
 
         Artboard artboard = new Artboard();
         artboard.fitImage();
-
         // Initialize the numPointsTextField with a default value of 0
         TextField numPointsTextField = new TextField("0");
-
         // Initialize the colorComboBox with three color options
-        colorComboBox.getItems().addAll("Green", "Red", "Blue");
-
         segmentButton.setOnAction(event -> {
             try {
                 int numPoints = Integer.parseInt(numPointsTextField.getText());
                 if (points.size() >= numPoints) {
-                    cutImage(numPoints, colorComboBox.getValue());
+                    cutImage(numPoints);
                     // Reset the point count and clear the canvas
                     points.clear();
                     redrawCanvas();
@@ -106,7 +102,7 @@ public class ColorizeSegment {
         return selectedPoints;
     }
 
-    private static void cutImage(int numPoints,String color) {
+    private static void cutImage(int numPoints) {
         // Get the selected points
         List<Point> points = getSelectedPoints(numPoints);
 
@@ -126,39 +122,33 @@ public class ColorizeSegment {
         WritableImage cutImage = new WritableImage(image.getPixelReader(), (int) image.getWidth(), (int) image.getHeight());
         PixelWriter pixelWriter = cutImage.getPixelWriter();
 // Set the drawing color to the chosen color
-        Color fillColor = null;
-        switch (color) {
-            case "Red":
-                fillColor = Color.RED;
-                break;
-            case "Green":
-                fillColor = Color.GREEN;
-                break;
-            case "Blue":
-                fillColor = Color.BLUE;
-                break;
-        }
         // Copy the pixels inside the polygon to the new image
         PixelReader pixelReader = imageView.getImage().getPixelReader();
         for (int x = minX; x < maxX; x++) {
             for (int y = minY; y < maxY; y++) {
                 boolean inside = isPixelInsidePath(points, x, y);
+                int argb = pixelReader.getArgb(x, y);
+                int grayValue = (int) (0.2989 * ((argb >> 16) & 0xFF) + 0.5870 * ((argb >> 8) & 0xFF) + 0.1140 * (argb & 0xFF));
                 if (inside) {
                     Color col = pixelReader.getColor(x, y);
-                    if (color == "Red" ){
-                        double gray = col.grayscale().getRed();
-
-                        pixelWriter.setColor(x, y, new Color(gray, 0, 0, col.getOpacity()));
+                    int redValue, greenValue, blueValue;
+                    // Calculate the gradient color based on the x-coordinate
+                    if (grayValue < 135) {
+                        redValue = 255;
+                        greenValue = (int) (255 * ((100-grayValue) / 85.0));;
+                        blueValue = 0;
+                    } else if (grayValue < 170) {
+                        redValue = (int) (255 * ((170 - grayValue) / 85.0));
+                        greenValue = (int) (255 * ((grayValue - 85) / 85.0));
+                        blueValue = 0;
+                    } else {
+                        redValue = 0;
+                        greenValue = (int) (255 * ((254-grayValue ) / 85.0));
+                        blueValue = 255;
                     }
-                    if (color == "Green" ){
-                        double gray = col.grayscale().getGreen();
+                    int argbNew =  (0xFF << 24) |(redValue << 16) | (greenValue << 8) | blueValue;
+                    pixelWriter.setArgb(x, y, argbNew);
 
-                        pixelWriter.setColor(x, y, new Color(0, gray, 0, col.getOpacity()));
-                    }if (color == "Blue" ){
-                        double gray = col.grayscale().getBlue();
-
-                        pixelWriter.setColor(x, y, new Color(0, 0, gray, col.getOpacity()));
-                    }
 
                 }
             }
@@ -198,6 +188,47 @@ public class ColorizeSegment {
     private static double direction(int x1, int y1, int x2, int y2, int x3, int y3) {
         return ((x3 - x1) * (y2 - y1)) - ((x2 - x1) * (y3 - y1));
     }
+
+    private static void createColorScheme() {
+        // Define the color ranges for each cluster
+        int[][] colorRanges = {{0, 50, 255, 0, 0}, {50, 100, 255, 165, 0}, {100, 150, 255, 255, 0},
+                {150, 180, 0, 255, 0}, {180, 200, 0, 128, 0}, {200, 225, 135, 206, 250}, {225, 255, 0, 0, 255}};
+
+        // Get the dimensions of the original image
+        int width = (int) image.getWidth();
+        int height = (int) image.getHeight();
+
+        // Create a new image with the same dimensions
+        WritableImage colorScheme = new WritableImage(width, height);
+        PixelWriter pixelWriter = colorScheme.getPixelWriter();
+
+        // Iterate over each pixel in the original image
+        PixelReader pixelReader = image.getPixelReader();
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                // Get the intensity value of the pixel
+                int intensity = (int) (pixelReader.getColor(x, y).getRed() * 255);
+
+                // Find the color range that the intensity value belongs to
+                int[] color = {0, 0, 0};
+                for (int i = 0; i < colorRanges.length; i++) {
+                    if (intensity >= colorRanges[i][0] && intensity < colorRanges[i][1]) {
+                        color[0] = colorRanges[i][2];
+                        color[1] = colorRanges[i][3];
+                        color[2] = colorRanges[i][4];
+                        break;
+                    }
+                }
+
+                // Assign the new color to the pixel
+                pixelWriter.setColor(x, y, javafx.scene.paint.Color.rgb(color[0], color[1], color[2]));
+            }
+        }
+
+        // Display the new color scheme
+        imageView.setImage(colorScheme);
+    }
+
 
 
     private static void redrawCanvas() {

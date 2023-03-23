@@ -17,18 +17,14 @@ import javafx.scene.text.Font;
 import java.io.IOException;
 
 import static com.viewer.viewerapp.ImageHandler.artboard2;
+import static com.viewer.viewerapp.TextTool.gridPane;
+import static com.viewer.viewerapp.TextTool.textGroup;
 
 public class Sidebar extends VBox {
 
 
     static ImageView newview;
-    private static Label Xcor = new Label();
-    private static Label Ycor = new Label();
-    private static Label Cocor = new Label();
 
-    Label XLabel = new Label("X coordinate:");
-    Label YLabel = new Label("Y coordinate:");
-    Label CoLabel = new Label("pixel color: ");
     public Sidebar() {
         super();
         setSpacing(10);
@@ -46,12 +42,12 @@ public class Sidebar extends VBox {
         Button flipVButton = createButton("Vertical Flip Tool", "ARROWS_V");
         Button rotateButton = createButton("Rotate Tool", "REFRESH");
         Button rSelectorButton = createButton("Region Selector Tool", "PENCIL");
-        Button AnalysisButton = createButton("analysis Tool", "ANCHOR");
+        Button AnalysisButton = createButton("analysis Tool", "SPOON");
 
-        Button ColorizeButton = createButton("analysis Tool", "ANCHOR");
-        Button Resizebutton = createButton("Resize Tool", "ANCHOR");
-        Button pixelbutton = createButton("Pixel position Tool", "ANCHOR");
-        Button textButton = createButton("Text  Tool", "ANCHOR");
+        Button ColorizeButton = createButton("Color Tool", "TINT");
+        Button Resizebutton = createButton("Resize Tool", "RECYCLE");
+        Button pixelbutton = createButton("Pixel position Tool", "QUIDDITCH");
+        Button textButton = createButton("Text  Tool", "TEXT");
 
         // Creating buttons actions
 // Create select button
@@ -113,7 +109,6 @@ public class Sidebar extends VBox {
             if (artboard2 != null) {
                 try {
                     TextTool.addTextTool(newview);
-
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -149,7 +144,7 @@ public class Sidebar extends VBox {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                artboard2.getChildren().addAll(ColorizeSegment.segmentButton,ColorizeSegment.colorComboBox);
+                artboard2.getChildren().addAll(ColorizeSegment.segmentButton);
 
             }
         });

@@ -1,6 +1,7 @@
 package com.viewer.viewerapp;
 
 import javafx.geometry.Orientation;
+import javafx.scene.Group;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -8,18 +9,21 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
+import javafx.scene.paint.Color;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.viewer.viewerapp.ImageHandler.artboard2;
+import static com.viewer.viewerapp.ImageHandler.pixelReader;
+import static com.viewer.viewerapp.Main.*;
 
 public class Artboard extends GridPane {
 
     private static final List<Artboard> allArtboards = new ArrayList<>();
     private Ruler horizontalRuler;
-    private ImageView imageView;
+    static ImageView imageView;
     private Ruler verticalRuler;
     private Grid grid;
     static Canvas canvas;
@@ -46,7 +50,6 @@ public class Artboard extends GridPane {
 
         // Add grid to appropriate cell
         addGrid();
-
 
         // Listen to changes in width and height to fit the image
     }

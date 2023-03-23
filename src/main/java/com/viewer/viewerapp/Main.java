@@ -2,28 +2,35 @@ package com.viewer.viewerapp;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
 import org.kordamp.bootstrapfx.BootstrapFX;
 
+import javax.swing.*;
 import java.util.Objects;
+
+import static com.viewer.viewerapp.Artboard.imageView;
+import static com.viewer.viewerapp.ImageHandler.image;
+import static com.viewer.viewerapp.ImageHandler.pixelReader;
 
 public class Main extends Application {
 
     public static void main(String[] args) {
         launch(args);
     }
-    private static Label Xcor = new Label();
-    private static Label Ycor = new Label();
-    private static Label Cocor = new Label();
+     static Label Xcor = new Label();
+     static Label Ycor = new Label();
+     static Label Cocor = new Label();
 
     Label XLabel = new Label("X coordinate:");
     Label YLabel = new Label("Y coordinate:");
@@ -49,6 +56,19 @@ public class Main extends Application {
 
         ImageHandler.setArtboard(artboard2);
 
+        artboard1.setOnMouseClicked(event -> {
+            int x = (int) event.getX();
+            int y = (int) event.getY();
+            Color color = pixelReader.getColor(y, x);
+            int red = (int) (color.getRed() * 255);
+            int green = (int) (color.getGreen() * 255);
+            int blue = (int) (color.getBlue() * 255);
+            int intensity= (red + green + blue) / 3;
+            Xcor.setText(Integer.toString(x));
+            Ycor.setText(Integer.toString(y));
+            Cocor.setText(String.valueOf(intensity));
+        });
+
         GridPane gridPane = new GridPane();
         gridPane.setPadding(new Insets(10));
         gridPane.addColumn(1, XLabel, Xcor);
@@ -56,17 +76,6 @@ public class Main extends Application {
         gridPane.addColumn(3, CoLabel, Cocor);
 
         artboards.getChildren().addAll(artboard1, artboard2);
-
-        artboard1.setOnMouseClicked(event -> {
-            int x = (int) event.getX();
-            int y = (int) event.getY();
-            Color color = ImageHandler.pixelReader.getColor(x, y);
-
-            Xcor.setText(Integer.toString(x));
-            Ycor.setText(Integer.toString(y));
-            Cocor.setText(String.valueOf(color));
-        });
-
 
         // Add text information to the bottom of the content pane
         StackPane textPane = new StackPane();
@@ -100,7 +109,12 @@ public class Main extends Application {
 
         // Set stage properties and show stage
         primaryStage.setScene(scene);
-        primaryStage.setTitle("Image Viewer");
+        primaryStage.setTitle("ZEZE Viewer");
+        Image icon = new Image("D:\\zeze work\\work\\Viewer Application 2\\Viewer Application\\src\\main\\java\\com\\viewer\\viewerapp\\ZZ_Viewer Logo.jpg");
+        primaryStage.getIcons().add(icon);
         primaryStage.show();
     }
+
+
+
 }
