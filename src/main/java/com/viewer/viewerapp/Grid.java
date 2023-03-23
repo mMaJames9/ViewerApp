@@ -58,5 +58,4 @@ public class Grid extends Pane {
             x += verticalRuler.getMinorTickUnit();
         }
     }
-
 }

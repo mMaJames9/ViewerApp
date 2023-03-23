@@ -1,213 +1,130 @@
 package com.viewer.viewerapp;
 
+import javafx.geometry.Bounds;
+import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Pane;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
-
-import java.util.ArrayList;
-import java.util.List;
+import javafx.stage.StageStyle;
 
 public class Crop {
+    private static final double HANDLE_SIZE = 10;
+    private static final double HANDLE_HALF_SIZE = HANDLE_SIZE / 2;
+    private static final double MIN_WIDTH = 50;
+    private static final double MIN_HEIGHT = 50;
+    private static final Color HANDLE_COLOR = Color.RED;
+    private static final Color HANDLE_FILL_COLOR = Color.rgb(255, 255, 255, 0.001);
+
+    private static Rectangle cropRect = null;
+    private static Group group;
+
     public static void crop(ImageView imageView) {
-        // Create a new Stage to display the cropping interface
+
+        if (cropRect != null) {
+            group.getChildren().remove(cropRect);
+        }
+
+        Bounds bounds = imageView.getBoundsInParent();
+        double x = bounds.getMinX();
+        double y = bounds.getMinY();
+        double w = bounds.getWidth();
+        double h = bounds.getHeight();
+
+        cropRect = new Rectangle(x, y, w, h);
+        cropRect.setStroke(HANDLE_COLOR);
+        cropRect.setStrokeWidth(2);
+        cropRect.setFill(HANDLE_FILL_COLOR);
+
+        group = new Group();
+        group.getChildren().add(imageView);
+        group.getChildren().add(cropRect);
+
+        addResizeHandles(cropRect);
+
+        BorderPane borderPane = new BorderPane();
+        borderPane.setCenter(group);
+
         Stage cropStage = new Stage();
-        cropStage.setTitle("Crop Image");
+        cropStage.initModality(Modality.APPLICATION_MODAL);
+        cropStage.setScene(new Scene(borderPane, Color.BLACK));
+        cropStage.setResizable(false);
+        cropStage.initStyle(StageStyle.UNDECORATED);
 
-        // Create a new Pane to hold the ImageView and the crop rectangle
-        Pane pane = new Pane();
-        pane.setPrefSize(imageView.getFitWidth(), imageView.getFitHeight());
-        pane.getChildren().add(imageView);
+        // Add the "validate" and "cancel" buttons to the modal window
+        Button validateButton = new Button("Validate Crop");
+        validateButton.setOnAction(event -> {
+            // When the validate button is clicked, get the cropped image and replace the original image
+            Image croppedImage = cropImage(imageView.getImage(), cropRect);
 
-        // Create a new Rectangle to define the crop area
-        Rectangle cropRectangle = new Rectangle();
-        cropRectangle.setFill(Color.rgb(0, 0, 0, 0.5));
-        cropRectangle.setStroke(Color.WHITE);
-        cropRectangle.setStrokeWidth(2);
-        pane.getChildren().add(cropRectangle);
+            // Create a new ImageView with the cropped image and replace the old ImageView on the artboard with it
+            ImageView croppedImageView = new ImageView(croppedImage);
+            croppedImageView.setPreserveRatio(true);
+            croppedImageView.fitWidthProperty().bind(imageView.fitWidthProperty());
+            croppedImageView.fitHeightProperty().bind(imageView.fitHeightProperty());
+            imageView.getParent().getChildrenUnmodifiable().set(imageView.getParent().getChildrenUnmodifiable().indexOf(imageView), croppedImageView);
 
-        // Create 8 handle rectangles to allow the user to resize the crop area
-        List<Rectangle> handleRectangles = new ArrayList<>();
-        for (int i = 0; i < 8; i++) {
-            Rectangle handleRectangle = new Rectangle(8, 8);
-            handleRectangle.setFill(Color.WHITE);
-            handleRectangle.setStroke(Color.BLACK);
-            handleRectangle.setStrokeWidth(1);
-            pane.getChildren().add(handleRectangle);
-            handleRectangles.add(handleRectangle);
-        }
-
-        // Define the initial position and size of the crop rectangle and handle rectangles
-        double cropX = imageView.getX();
-        double cropY = imageView.getY();
-        double cropWidth = imageView.getFitWidth();
-        double cropHeight = imageView.getFitHeight();
-        updateCropRectangle(cropRectangle, cropX, cropY, cropWidth, cropHeight);
-        updateHandleRectangles(handleRectangles, cropX, cropY, cropWidth, cropHeight);
-
-        // Register event handlers to allow the user to interact with the crop area
-        DragContext dragContext = new DragContext();
-        cropRectangle.setOnMousePressed(event -> {
-            dragContext.mouseAnchorX = event.getSceneX();
-            dragContext.mouseAnchorY = event.getSceneY();
-            dragContext.cropX = cropX;
-            dragContext.cropY = cropY;
-            dragContext.cropWidth = cropWidth;
-            dragContext.cropHeight = cropHeight;
+            cropStage.close();
         });
-        cropRectangle.setOnMouseDragged(event -> {
-            double deltaX = event.getSceneX() - dragContext.mouseAnchorX;
-            double deltaY = event.getSceneY() - dragContext.mouseAnchorY;
-            double newCropX = dragContext.cropX + deltaX;
-            double newCropY = dragContext.cropY + deltaY;
-            double newCropWidth = dragContext.cropWidth;
-            double newCropHeight = dragContext.cropHeight;
-            getNewCrop(imageView, cropRectangle, handleRectangles, newCropX, newCropY, newCropWidth, newCropHeight);
-        });
-        for (Rectangle handleRectangle : handleRectangles) {
-            final DragContext handleDragContext = new DragContext();
-            handleRectangle.setOnMousePressed(event -> {
-                handleDragContext.mouseAnchorX = event.getSceneX();
-                handleDragContext.mouseAnchorY = event.getSceneY();
-                handleDragContext.cropX = cropX;
-                handleDragContext.cropY = cropY;
-                handleDragContext.cropWidth = cropWidth;
-                handleDragContext.cropHeight = cropHeight;
-            });
-            handleRectangle.setOnMouseDragged(event -> {
-                double deltaX = event.getSceneX() - handleDragContext.mouseAnchorX;
-                double deltaY = event.getSceneY() - handleDragContext.mouseAnchorY;
-                double newCropX = cropX;
-                double newCropY = cropY;
-                double newCropWidth = cropWidth;
-                double newCropHeight = cropHeight;
-                switch (handleRectangles.indexOf(handleRectangle)) {
-                    case 0 -> { // Top Left
-                        newCropX = handleDragContext.cropX + deltaX;
-                        newCropY = handleDragContext.cropY + deltaY;
-                        newCropWidth = handleDragContext.cropWidth - deltaX;
-                        newCropHeight = handleDragContext.cropHeight - deltaY;
-                    }
-                    case 1 -> { // Top
-                        newCropY = handleDragContext.cropY + deltaY;
-                        newCropHeight = handleDragContext.cropHeight - deltaY;
-                    }
-                    case 2 -> { // Top Right
-                        newCropY = handleDragContext.cropY + deltaY;
-                        newCropWidth = handleDragContext.cropWidth + deltaX;
-                        newCropHeight = handleDragContext.cropHeight - deltaY;
-                    }
-                    case 3 -> // Right
-                            newCropWidth = handleDragContext.cropWidth + deltaX;
-                    case 4 -> { // Bottom Right
-                        newCropWidth = handleDragContext.cropWidth + deltaX;
-                        newCropHeight = handleDragContext.cropHeight + deltaY;
-                    }
-                    case 5 -> // Bottom
-                            newCropHeight = handleDragContext.cropHeight + deltaY;
-                    case 6 -> { // Bottom Left
-                        newCropX = handleDragContext.cropX + deltaX;
-                        newCropWidth = handleDragContext.cropWidth - deltaX;
-                        newCropHeight = handleDragContext.cropHeight + deltaY;
-                    }
-                    case 7 -> { // Left
-                        newCropX = handleDragContext.cropX + deltaX;
-                        newCropWidth = handleDragContext.cropWidth - deltaX;
-                    }
-                }
-                getNewCrop(imageView, cropRectangle, handleRectangles, newCropX, newCropY, newCropWidth, newCropHeight);
-            });
-        }
-        // Create a new Scene to display the cropping interface
-        Scene cropScene = new Scene(pane);
 
-        // Set the scene and show the stage
-        cropStage.setScene(cropScene);
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setOnAction(event -> {
+            // When the cancel button is clicked, close the modal window without making any changes
+            cropStage.close();
+        });
+
+        HBox buttonBox = new HBox(10, validateButton, cancelButton);
+        buttonBox.setAlignment(Pos.CENTER);
+        borderPane.setBottom(buttonBox);
+
         cropStage.showAndWait();
     }
 
-    private static void getNewCrop(ImageView imageView, Rectangle cropRectangle, List<Rectangle> handleRectangles, double newCropX, double newCropY, double newCropWidth, double newCropHeight) {
-        double cropX;
-        double cropY;
-        double cropWidth;
-        double cropHeight;
-        if (newCropX < 0) {
-            newCropWidth += newCropX;
-            newCropX = 0;
+    private static void addResizeHandles(Rectangle cropRect) {
+        // Add resize handles to the corners of the crop rectangle
+        for (CropHandle handle : CropHandle.values()) {
+            final Circle circle = new Circle(HANDLE_HALF_SIZE, HANDLE_HALF_SIZE, HANDLE_HALF_SIZE);
+            circle.setFill(HANDLE_COLOR);
+            handle.attach(circle);
+
+            circle.centerXProperty().addListener((ov, oldX, newX) -> handle.updateX(newX.doubleValue() - HANDLE_HALF_SIZE));
+
+            circle.centerYProperty().addListener((ov, oldY, newY) -> handle.updateY(newY.doubleValue() - HANDLE_HALF_SIZE));
+
+            cropRect.widthProperty().addListener((ov, oldWidth, newWidth) -> handle.updateWidth(newWidth.doubleValue() - HANDLE_SIZE));
+
+            cropRect.heightProperty().addListener((ov, oldHeight, newHeight) -> handle.updateHeight(newHeight.doubleValue() - HANDLE_SIZE));
+
+            handle.updateX(circle.getCenterX() - HANDLE_HALF_SIZE);
+            handle.updateY(circle.getCenterY() - HANDLE_HALF_SIZE);
+
+            cropRect.widthProperty().addListener((ov, oldWidth, newWidth) -> handle.updateWidth(newWidth.doubleValue() - HANDLE_SIZE));
+
+            cropRect.heightProperty().addListener((ov, oldHeight, newHeight) -> handle.updateHeight(newHeight.doubleValue() - HANDLE_SIZE));
+            group.getChildren().add(circle);
         }
-        if (newCropY < 0) {
-            newCropHeight += newCropY;
-            newCropY = 0;
-        }
-        if (newCropX + newCropWidth > imageView.getFitWidth()) {
-            newCropWidth = imageView.getFitWidth() - newCropX;
-        }
-        if (newCropY + newCropHeight > imageView.getFitHeight()) {
-            newCropHeight = imageView.getFitHeight() - newCropY;
-        }
-        cropX = newCropX;
-        cropY = newCropY;
-        cropWidth = newCropWidth;
-        cropHeight = newCropHeight;
-        updateCropRectangle(cropRectangle, cropX, cropY, cropWidth, cropHeight);
-        updateHandleRectangles(handleRectangles, cropX, cropY, cropWidth, cropHeight);
     }
 
-    /**
-     * Updates the position and size of the crop rectangle based on the specified parameters.
-     *
-     * @param cropRectangle the crop rectangle to update
-     * @param cropX         the x-coordinate of the top-left corner of the crop rectangle
-     * @param cropY         the y-coordinate of the top-left corner of the crop rectangle
-     * @param cropWidth     the width of the crop rectangle
-     * @param cropHeight    the height of the crop rectangle
-     */
-    private static void updateCropRectangle(Rectangle cropRectangle, double cropX, double cropY, double cropWidth, double cropHeight) {
-        cropRectangle.setX(cropX);
-        cropRectangle.setY(cropY);
-        cropRectangle.setWidth(cropWidth);
-        cropRectangle.setHeight(cropHeight);
+    private static Image cropImage(Image image, Rectangle cropRect) {
+        // Crop the image based on the crop rectangle's dimensions and position
+        double x = cropRect.getLayoutX() + cropRect.getBoundsInParent().getMinX();
+        double y = cropRect.getLayoutY() + cropRect.getBoundsInParent().getMinY();
+        double width = cropRect.getBoundsInParent().getWidth();
+        double height = cropRect.getBoundsInParent().getHeight();
+
+        PixelReader reader = image.getPixelReader();
+        return new WritableImage(reader, (int) x, (int) y, (int) width, (int) height);
     }
 
-    /**
-     * Updates the position and size of the handle rectangles based on the specified parameters.
-     *
-     * @param handleRectangles the handle rectangles to update
-     * @param cropX            the x-coordinate of the top-left corner of the crop rectangle
-     * @param cropY            the y-coordinate of the top-left corner of the crop rectangle
-     * @param cropWidth        the width of the crop rectangle
-     * @param cropHeight       the height of the crop rectangle
-     */
-    private static void updateHandleRectangles(List<Rectangle> handleRectangles, double cropX, double cropY, double cropWidth, double cropHeight) {
-        handleRectangles.get(0).setX(cropX - 4);
-        handleRectangles.get(0).setY(cropY - 4);
-        handleRectangles.get(1).setX(cropX + cropWidth / 2 - 4);
-        handleRectangles.get(1).setY(cropY - 4);
-        handleRectangles.get(2).setX(cropX + cropWidth - 4);
-        handleRectangles.get(2).setY(cropY - 4);
-        handleRectangles.get(3).setX(cropX + cropWidth - 4);
-        handleRectangles.get(3).setY(cropY + cropHeight / 2 - 4);
-        handleRectangles.get(4).setX(cropX + cropWidth - 4);
-        handleRectangles.get(4).setY(cropY + cropHeight - 4);
-        handleRectangles.get(5).setX(cropX + cropWidth / 2 - 4);
-        handleRectangles.get(5).setY(cropY + cropHeight - 4);
-        handleRectangles.get(6).setX(cropX - 4);
-        handleRectangles.get(6).setY(cropY + cropHeight - 4);
-        handleRectangles.get(7).setX(cropX - 4);
-        handleRectangles.get(7).setY(cropY + cropHeight / 2 - 4);
-    }
 
-    /**
-     * A helper class to store the context of a drag operation.
-     */
-    private static class DragContext {
-        double mouseAnchorX;
-        double mouseAnchorY;
-        double cropX;
-        double cropY;
-        double cropWidth;
-        double cropHeight;
-    }
 }
