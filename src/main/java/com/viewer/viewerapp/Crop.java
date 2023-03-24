@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Crop {
+
     public static void crop(ImageView imageView) {
         // Create a new Stage to display the cropping interface
         Stage cropStage = new Stage(StageStyle.UTILITY);
