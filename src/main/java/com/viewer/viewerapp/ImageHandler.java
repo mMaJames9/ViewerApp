@@ -184,3 +184,4 @@ public class ImageHandler {
         errorDialog.showAndWait();
     }
 }
+
