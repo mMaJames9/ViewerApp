@@ -126,5 +126,5 @@ public class Crop {
         return new WritableImage(reader, (int) x, (int) y, (int) width, (int) height);
     }
 
-
+    
 }
