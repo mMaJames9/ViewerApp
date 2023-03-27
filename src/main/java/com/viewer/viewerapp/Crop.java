@@ -21,7 +21,8 @@ import java.util.List;
 
 public class Crop {
 
-    public static void crop(ImageView imageView) {
+    public static void crop(Artboard artboard) {
+        ImageView imageView = artboard.getImageView();
         // Create a new Stage to display the cropping interface
         Stage cropStage = new Stage(StageStyle.UTILITY);
         cropStage.setResizable(false);
@@ -113,7 +114,7 @@ public class Crop {
                 WritableImage croppedImage = getCroppedImage(originalImageView, cropRectangle);
 
                 // Set the cropped image in the original ImageView
-                imageView.setImage(croppedImage);
+                artboard.setImage(croppedImage);
 
                 // Close the crop stage
                 cropStage.close();

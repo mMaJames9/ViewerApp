@@ -67,7 +67,7 @@ public class Sidebar extends VBox {
 
         cropButton.setOnAction(event -> {
             if (artboard2.getImageView() != null) {
-                Crop.crop(newView);
+                Crop.crop(artboard2);
             }
         });
     }

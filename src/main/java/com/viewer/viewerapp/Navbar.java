@@ -12,8 +12,10 @@ public class Navbar extends MenuBar {
 
         Menu fileMenu = createMenu("File", "Open", "Save", "Exit");
         Menu editMenu = createMenu("Edit", "Undo", "Redo", "Cut", "Copy", "Paste", "Delete");
-        this.getMenus().addAll(fileMenu, editMenu);
+        Menu windowMenu = createMenu("Window", "Show Grid", "Remove Grid", "Show Rulers", "Remove Rulers");
+        this.getMenus().addAll(fileMenu, editMenu,windowMenu);
 
+        // fileMenu
         fileMenu.getItems().get(0).setOnAction(event -> imageHandler.choosePicture());
 
         fileMenu.getItems().get(1).setOnAction(event -> {
@@ -23,6 +25,19 @@ public class Navbar extends MenuBar {
         });
 
         fileMenu.getItems().get(2).setOnAction(event -> System.exit(0));
+
+        // windowMenu
+        windowMenu.getItems().get(0).setOnAction(event -> {
+            if (artboard2.getImageView() != null) {
+                artboard2.addGrid();
+            }
+        });
+
+        windowMenu.getItems().get(1).setOnAction(event -> {
+            if (artboard2.getImageView() != null) {
+                artboard2.removeGrid();
+            }
+        });
     }
 
     private Menu createMenu(String menuName, String... itemNames) {
