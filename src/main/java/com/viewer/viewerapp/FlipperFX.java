@@ -5,16 +5,14 @@ import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 
-import java.io.IOException;
-
 import static javafx.scene.layout.Region.USE_PREF_SIZE;
 
 public class FlipperFX {
 
     private static ImageView flippedImageView;
 
-    public static void VertFlip(ImageView imageView) throws IOException {
-
+    public static void VertFlip(Artboard artboard) {
+        ImageView imageView = artboard.getImageView();
         Image image = imageView.getImage();
         flippedImageView = new ImageView();
         flippedImageView.setPreserveRatio(true);
@@ -40,11 +38,11 @@ public class FlipperFX {
         flippedImage.getPixelWriter().setPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), flippedPixels, 0, width);
         // Update the flipped image view
         flippedImageView.setImage(flippedImage);
-        imageView.setImage(flippedImage);
+        artboard.setImage(flippedImage);
     }
 
-    public static void Horfrip(ImageView imageView) throws IOException {
-
+    public static void Horfrip(Artboard artboard) {
+        ImageView imageView = artboard.getImageView();
         Image image = imageView.getImage();
 
         flippedImageView = new ImageView();
@@ -75,7 +73,7 @@ public class FlipperFX {
 
         // Update the flipped image view
         flippedImageView.setImage(flippedImage);
-        imageView.setImage(flippedImage);
+        artboard.setImage(flippedImage);
     }
 
 }

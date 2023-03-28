@@ -1,6 +1,5 @@
 package com.viewer.viewerapp;
 
-import javafx.geometry.Bounds;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
@@ -21,7 +20,8 @@ import java.util.List;
 
 public class Crop {
 
-    public static void crop(ImageView imageView) {
+    public static void crop(Artboard artboard) {
+        ImageView imageView = artboard.getImageView();
         // Create a new Stage to display the cropping interface
         Stage cropStage = new Stage(StageStyle.UTILITY);
         cropStage.setResizable(false);
@@ -113,7 +113,7 @@ public class Crop {
                 WritableImage croppedImage = getCroppedImage(originalImageView, cropRectangle);
 
                 // Set the cropped image in the original ImageView
-                imageView.setImage(croppedImage);
+                artboard.setImage(croppedImage);
 
                 // Close the crop stage
                 cropStage.close();
@@ -257,15 +257,22 @@ public class Crop {
     }
 
     private static WritableImage getCroppedImage(ImageView imageView, Rectangle cropRectangle) {
-        // Create a new snapshot parameters object
-        SnapshotParameters snapshotParams = new SnapshotParameters();
+        double x = cropRectangle.getX();
+        double y = cropRectangle.getY();
+        double width = cropRectangle.getWidth();
+        double height = cropRectangle.getHeight();
 
-        // Set the viewport of the snapshot parameters to the bounds of the crop rectangle
-        Bounds bounds = cropRectangle.getBoundsInParent();
-        snapshotParams.setViewport(new Rectangle2D(bounds.getMinX(), bounds.getMinY(), bounds.getWidth(), bounds.getHeight()));
+        // Check if crop rectangle extends above image view
+        double imageViewY = imageView.getY();
+        if (y < imageViewY) {
+            height -= imageViewY - y;
+            y = imageViewY;
+        }
 
-        // Return a snapshot of the ImageView with the specified snapshot parameters
-        return imageView.snapshot(snapshotParams, null);
+        SnapshotParameters snapshotParameters = new SnapshotParameters();
+        snapshotParameters.setFill(Color.TRANSPARENT);
+        snapshotParameters.setViewport(new Rectangle2D(x, y, width, height));
+        return imageView.snapshot(snapshotParameters, null);
     }
 
     private static class DragContext {

@@ -126,4 +126,20 @@ public class Artboard extends GridPane {
     public ImageView getImageView() {
         return imageView;
     }
+
+    public double getImageWidth() {
+        if (imageView != null && imageView.getImage() != null) {
+            return imageView.getImage().getWidth();
+        } else {
+            return 0;
+        }
+    }
+
+    public double getImageHeight() {
+        if (imageView != null && imageView.getImage() != null) {
+            return imageView.getImage().getHeight();
+        } else {
+            return 0;
+        }
+    }
 }

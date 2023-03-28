@@ -79,8 +79,6 @@ public class ImageHandler {
 
                 Artboard.updateAllArtboards();
 
-                Sidebar.newView = artboard2.getImageView();
-
             } catch (IOException | InvalidFormatException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error");
@@ -161,14 +159,14 @@ public class ImageHandler {
                 fos.close();
             }
 
-            showInfoAlert();
+            showSuccessAlert();
         } catch (Exception ex) {
             showErrorAlert(ex);
         }
     }
 
 
-    private void showInfoAlert() {
+    private void showSuccessAlert() {
         Alert successDialog = new Alert(Alert.AlertType.INFORMATION);
         successDialog.setTitle("Success");
         successDialog.setHeaderText(null);
@@ -184,4 +182,3 @@ public class ImageHandler {
         errorDialog.showAndWait();
     }
 }
-

@@ -36,14 +36,6 @@ public class Ruler extends Region {
         return minorTickUnit;
     }
 
-    public void setRulerWidth(double width) {
-        super.setWidth(width);
-    }
-
-    public void setRulerHeight(double height) {
-        super.setHeight(height);
-    }
-
     @Override
     protected void layoutChildren() {
         if (getWidth() <= 0 || getHeight() <= 0) {
@@ -130,9 +122,5 @@ public class Ruler extends Region {
         } else {
             return value + getInsets().getTop();
         }
-    }
-
-    public Orientation getOrientation() {
-        return orientation;
     }
 }
