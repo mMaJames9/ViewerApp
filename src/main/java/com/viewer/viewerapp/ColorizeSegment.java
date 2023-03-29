@@ -1,6 +1,6 @@
 package com.viewer.viewerapp;
 
-import javafx.scene.canvas.Canvas;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -8,10 +8,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.*;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,10 +19,7 @@ import java.util.List;
 
 
 public class ColorizeSegment {
-
     private static ImageView imageView;
-
-
     static Button segmentButton = new Button("Segment");
     static  ComboBox<String> colorComboBox = new ComboBox<>();
     private  static File file;
@@ -69,28 +66,22 @@ public class ColorizeSegment {
             // Handle the mouse click
             handleMouseClick(event);
         });
-
     }
     private static void handleMouseClick(MouseEvent event) {
-
         Point point = new Point((int) event.getX(), (int) event.getY());
         points.add(point);
-
         // Draw a red dot at the clicked point
         GraphicsContext gc = Artboard.canvas .getGraphicsContext2D();
         gc.setFill(Color.RED);
         gc.fillOval(point.x - 3, point.y - 3, 6, 6);
-
         // Draw red lines between the points
         if (points.size() > 1) {
             Point prevPoint = points.get(points.size() - 2);
             gc.setStroke(Color.RED);
             gc.setLineWidth(2);
             gc.strokeLine(prevPoint.x, prevPoint.y, point.x, point.y);
-
         }
     }
-
     private static List<Point> getSelectedPoints(int numPoints) {
         List<Point> selectedPoints = new ArrayList<>();
         if (points.size() >= numPoints) {
@@ -101,11 +92,9 @@ public class ColorizeSegment {
         }
         return selectedPoints;
     }
-
     private static void cutImage(int numPoints) {
         // Get the selected points
         List<Point> points = getSelectedPoints(numPoints);
-
         // Find the bounding box of the selected polygon
         int minX = Integer.MAX_VALUE;
         int minY = Integer.MAX_VALUE;
@@ -124,6 +113,31 @@ public class ColorizeSegment {
 // Set the drawing color to the chosen color
         // Copy the pixels inside the polygon to the new image
         PixelReader pixelReader = imageView.getImage().getPixelReader();
+        BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
+        int imageWidth = bufferedImage.getWidth();
+        int imageHeight = bufferedImage.getHeight();
+        int pixelCount = imageWidth * imageHeight;
+
+        int maxPixelValue = 0;
+        int minPixelValue = 255;
+        int sumPixelValues = 0;
+
+        for(int x = 0;x < imageWidth;x++){
+            for (int y = 0; y < imageHeight; y++) {
+                int pixelValue = bufferedImage.getRaster().getSample(x, y, 0);
+                if (pixelValue > maxPixelValue) {
+                    maxPixelValue = pixelValue;
+                }
+
+                if (pixelValue < minPixelValue) {
+                    minPixelValue = pixelValue;
+                }
+
+                sumPixelValues += pixelValue;
+            }
+        }
+        double meanPixelValue = (double) sumPixelValues / pixelCount;
+
         for (int x = minX; x < maxX; x++) {
             for (int y = minY; y < maxY; y++) {
                 boolean inside = isPixelInsidePath(points, x, y);
@@ -131,31 +145,83 @@ public class ColorizeSegment {
                 int grayValue = (int) (0.2989 * ((argb >> 16) & 0xFF) + 0.5870 * ((argb >> 8) & 0xFF) + 0.1140 * (argb & 0xFF));
                 if (inside) {
                     Color col = pixelReader.getColor(x, y);
+
                     int redValue, greenValue, blueValue;
                     // Calculate the gradient color based on the x-coordinate
-                    if (grayValue < 135) {
-                        redValue = 255;
-                        greenValue = (int) (255 * ((100-grayValue) / 85.0));;
-                        blueValue = 0;
-                    } else if (grayValue < 170) {
-                        redValue = (int) (255 * ((170 - grayValue) / 85.0));
-                        greenValue = (int) (255 * ((grayValue - 85) / 85.0));
-                        blueValue = 0;
-                    } else {
-                        redValue = 0;
-                        greenValue = (int) (255 * ((254-grayValue ) / 85.0));
-                        blueValue = 255;
+                    if (meanPixelValue < 100) {
+                        if (grayValue <= 95) {
+                            redValue = 255;
+                            greenValue = (int) (255 * (95-grayValue) / 85.0);
+                            blueValue = 0;
+                        }
+                        else if (grayValue <= 120) {
+                            redValue = 255;
+                            greenValue = (int) (255 * (95-grayValue) / 85.0);
+                            blueValue = 0;
+                        }
+                        else if (grayValue <= 145) {
+                            redValue = (int) (255 * ((145 - grayValue) / 85.0));
+                            greenValue = (int) (255 * ((grayValue-95) / 85.0));
+                            blueValue = 0;
+                        } else {
+                            redValue = 0;
+                            greenValue = (int) (255 * ((210 - grayValue) / 85.0));
+                            blueValue = 255;
+                        }
+                        int argbNew = (0xFF << 24) | (redValue << 16) | (greenValue << 8) | blueValue;
+                        pixelWriter.setArgb(x, y, argbNew);
                     }
-                    int argbNew =  (0xFF << 24) |(redValue << 16) | (greenValue << 8) | blueValue;
-                    pixelWriter.setArgb(x, y, argbNew);
-
+                    else if (meanPixelValue < 150){
+                        if (grayValue <= 130) {
+                            redValue = 255;
+                            greenValue = (int) (255 * ((128-grayValue ) / 85.0));
+                            blueValue = 0;
+                        } else if (grayValue <= 150) {
+                            redValue = 255;
+                            greenValue = (int) (255 * (128-grayValue) / 85.0);
+                            blueValue = 0;
+                        }else if (grayValue <= 170) {
+                            redValue = (int) (255 * ((170 - grayValue) / 85.0));
+                            greenValue = (int) (255 * (grayValue / 85.0));
+                            blueValue = 0;
+                        } else {
+                            redValue = 0;
+                            greenValue = (int) (255 * ((254-grayValue ) / 85.0));
+                            blueValue = 255;
+                        }
+                        int argbNew =  (0xFF << 24) |(redValue << 16) | (greenValue << 8) | blueValue;
+                        pixelWriter.setArgb(x, y, argbNew);
+                    }
+                    else if (meanPixelValue > 150) {
+                        // Calculate the gradient color based on the x-coordinate
+                        if (grayValue <= 140) {
+                            redValue =255;
+                            greenValue = (int) (255 * ((133-grayValue) / 85.5));
+                            blueValue = 0;
+                        }
+                        else if (grayValue <= 155) {
+                            redValue = 255;
+                            greenValue = (int) (255 * (133-grayValue) / 85.0);
+                            blueValue = 0;
+                        }else if (grayValue <= 170) {
+                            redValue = (int) (255 * ((170 - grayValue) / 85.5));
+                            greenValue = (int) (255 * ((grayValue) / 85.5));
+                            blueValue = 0;
+                        } else {
+                            redValue = 0;
+                            greenValue = (int) (255 * ((254-grayValue ) / 85.5));
+                            blueValue = 255;
+                        }
+                        int argbNew =  (0xFF << 24) |(redValue << 16) | (greenValue << 8) | blueValue;
+                        pixelWriter.setArgb(x, y, argbNew);
+                    }
 
                 }
             }
         }
         // Display the cut image
         imageView.setImage(cutImage);
-        ImageHandler.artboard2.setImage(cutImage);
+        Sidebar.newview.setImage(cutImage);
     }
 
     private static boolean isPixelInsidePath(List<Point> points, int x, int y) {

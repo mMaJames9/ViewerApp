@@ -125,7 +125,7 @@ public class Segment {
 
         // Display the cut image
         imageView.setImage(cutImage);
-        ImageHandler.artboard2.setImage(cutImage);
+        Sidebar.newview.setImage(cutImage);
     }
 
 

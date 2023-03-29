@@ -119,7 +119,11 @@ public class Sidebar extends VBox {
         // Create analysis button
         AnalysisButton.setOnAction(event -> {
             if (artboard2 != null) {
-                ImageAnalyzerGUI.Measure(newview);
+                try {
+                    ImageAnalyzerGUI.Measure();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
 

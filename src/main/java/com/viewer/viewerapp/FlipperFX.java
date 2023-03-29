@@ -43,7 +43,7 @@ public static void VertFlip( ImageView imageView ) throws IOException {
     flippedImage.getPixelWriter().setPixels(0, 0, width, height, javafx.scene.image.PixelFormat.getIntArgbInstance(), flippedPixels, 0, width);
     // Update the flipped image view
     flippedImageView.setImage(flippedImage);
-    ImageHandler.artboard2.setImage(flippedImage);
+    Sidebar.newview.setImage(flippedImage);
 }
 
     public static void Horfrip(ImageView imageView ) throws IOException {
@@ -78,7 +78,7 @@ public static void VertFlip( ImageView imageView ) throws IOException {
 
         // Update the flipped image view
         flippedImageView.setImage(flippedImage);
-        ImageHandler.artboard2.setImage(flippedImage);
+        Sidebar.newview.setImage(flippedImage);
     }
 
 }

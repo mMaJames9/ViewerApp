@@ -49,7 +49,7 @@ public class ImageResizeGUI {
             // Show the resized image in the result view
             Image resultImage = SwingFXUtils.toFXImage(resizedImage, null);
 
-            ImageHandler.artboard2.setImage(resultImage);
+            Sidebar.newview.setImage(resultImage);
         });
 
         Button saveButton = new Button("Save");

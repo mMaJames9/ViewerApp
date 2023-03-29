@@ -13,6 +13,7 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
@@ -26,8 +27,11 @@ public class ImageAnalyzerGUI {
     private static ImageView imageView = new ImageView();
 
 
-    public static void Measure( ImageView imageView) {
+    public static void Measure( ) throws IOException {
         Stage stage = new Stage();
+        BufferedImage buffer = ImageIO.read(ImageHandler.file);
+        Image image = SwingFXUtils.toFXImage(buffer,null);
+        imageView = new ImageView(image);
         // Create a label and button for selecting an image file
         Label imageLabel = new Label("Select an image file:");
         Button imageButton = new Button("Measure");
@@ -107,7 +111,6 @@ public class ImageAnalyzerGUI {
         imageView.setFitHeight(300);
         // Display the image in the image view
         imageView.setImage(image);
-
 
         int imageWidth = bufferedImage.getWidth();
         int imageHeight = bufferedImage.getHeight();

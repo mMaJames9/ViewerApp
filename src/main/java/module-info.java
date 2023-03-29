@@ -12,6 +12,7 @@ module com.viewer.viewerapp {
     requires java.desktop;
     requires javafx.swing;
 
+
     opens com.viewer.viewerapp to javafx.fxml;
     exports com.viewer.viewerapp;
 }

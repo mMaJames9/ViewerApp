@@ -6,6 +6,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -21,6 +22,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.Stack;
+
+import static com.viewer.viewerapp.Artboard.imageView;
 
 public class ImageHandler {
 
@@ -28,7 +32,10 @@ public class ImageHandler {
     private static final int INTENSITY_SCALAR = 3;
     static Artboard artboard2;
      static  Image image;
+     static Stack<Image> undoStack = new Stack<>();
+     static Stack<Image> redoStack = new Stack<>();
     static PixelReader pixelReader;
+    static File file ;
 
     public static Image getImage() {
         return image;
@@ -65,13 +72,16 @@ public class ImageHandler {
     public void choosePicture() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(imageFileFilter.getDescription(), "*.jpg", "*.jpeg", "*.tif", "*.png", "*.xlsx"));
-        File file = fileChooser.showOpenDialog(null);
+        file = fileChooser.showOpenDialog(null);
         if (file != null) {
             try {
                 String extension = imageFileFilter.getExtension(file);
                 assert extension != null;
                 if (extension.equalsIgnoreCase("xlsx")) {
                     image = createImageFromXLSX(file);
+                } else if (extension.equalsIgnoreCase("ISQ")) {
+                    String isqFilePath = String.valueOf(file);
+
                 } else {
                     BufferedImage buf = ImageIO.read(file);
                     image = SwingFXUtils.toFXImage(buf, null);;
@@ -79,6 +89,11 @@ public class ImageHandler {
                 pixelReader = image.getPixelReader();
                 Artboard.updateAllArtboards();
                 Sidebar.newview = artboard2.getImageView();
+                imageView.addEventHandler(MouseEvent.MOUSE_PRESSED, Main::hangleClick);
+                Image originalImage = image;
+                undoStack.clear();
+                redoStack.clear();
+                undoStack.push(originalImage);
 
             } catch (IOException | InvalidFormatException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -149,9 +164,9 @@ public class ImageHandler {
         }
         try {
             if (pngButton.isSelected()) {
-                ImageView imageView = artboard2.getImageView();
-                WritableImage imageToSave = imageView.snapshot(null, null);
-                BufferedImage bufferedImage = SwingFXUtils.fromFXImage(imageToSave, null);
+                ImageView imageView = Sidebar.newview;
+                image = imageView.getImage();
+                BufferedImage bufferedImage = SwingFXUtils.fromFXImage(image, null);
                 ImageIO.write(bufferedImage, extension, fileToSave);
             } else {
                 Workbook workbook = toWorkbook();
@@ -165,7 +180,6 @@ public class ImageHandler {
             showErrorAlert(ex);
         }
     }
-
 
     private void showInfoAlert() {
         Alert successDialog = new Alert(Alert.AlertType.INFORMATION);

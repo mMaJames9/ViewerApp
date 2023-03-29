@@ -40,12 +40,13 @@ public class Crop {
                     (int) clip.getWidth(), (int) clip.getHeight());
             redrawCanvas();
              image= SwingFXUtils.toFXImage(croppedImage, null);
-            artboard2.setImage(image);
+            Sidebar.newview.setImage(image);
         });
     }
 
     private static void onMousePressed(MouseEvent e) {
         gc.clearRect(0, 0, Artboard.canvas.getWidth(), Artboard.canvas.getHeight());
+        gc.drawImage(image, 0, 0);
         gc.setStroke(Color.RED);
         gc.setLineWidth(2);
 
@@ -62,6 +63,7 @@ public class Crop {
 
     private static void onMouseDragged(MouseEvent e) {
         gc.clearRect(0, 0, Artboard.canvas.getWidth(), Artboard.canvas.getHeight());
+        gc.drawImage(image, 0, 0);
         gc.setStroke(Color.RED);
         gc.setLineWidth(2);
 
@@ -83,7 +85,7 @@ public class Crop {
 
     private static void onMouseReleased(MouseEvent e) {
         gc.clearRect(0, 0, Artboard.canvas.getWidth(), Artboard.canvas.getHeight());
-
+        gc.drawImage(image, 0, 0);
         gc.setStroke(Color.RED);
         gc.setLineWidth(2);
 

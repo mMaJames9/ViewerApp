@@ -6,21 +6,20 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
 import org.kordamp.bootstrapfx.BootstrapFX;
 
 import javax.swing.*;
+import java.util.EventListener;
 import java.util.Objects;
 
 import static com.viewer.viewerapp.Artboard.imageView;
-import static com.viewer.viewerapp.ImageHandler.image;
 import static com.viewer.viewerapp.ImageHandler.pixelReader;
 
 public class Main extends Application {
@@ -35,6 +34,10 @@ public class Main extends Application {
     Label XLabel = new Label("X coordinate:");
     Label YLabel = new Label("Y coordinate:");
     Label CoLabel = new Label("pixel color: ");
+
+    // Create and add artboards
+    Artboard artboard1 = new Artboard();
+    Artboard artboard2 = new Artboard();
     @Override
     public void start(Stage primaryStage) {
         // Create image handler to handle loading and displaying images
@@ -50,24 +53,9 @@ public class Main extends Application {
         HBox artboards = new HBox();
         artboards.getStyleClass().add("artboards");
 
-        // Create and add artboards
-        Artboard artboard1 = new Artboard();
-        Artboard artboard2 = new Artboard();
 
         ImageHandler.setArtboard(artboard2);
 
-        artboard1.setOnMouseClicked(event -> {
-            int x = (int) event.getX();
-            int y = (int) event.getY();
-            Color color = pixelReader.getColor(y, x);
-            int red = (int) (color.getRed() * 255);
-            int green = (int) (color.getGreen() * 255);
-            int blue = (int) (color.getBlue() * 255);
-            int intensity= (red + green + blue) / 3;
-            Xcor.setText(Integer.toString(x));
-            Ycor.setText(Integer.toString(y));
-            Cocor.setText(String.valueOf(intensity));
-        });
 
         GridPane gridPane = new GridPane();
         gridPane.setPadding(new Insets(10));
@@ -114,7 +102,21 @@ public class Main extends Application {
         primaryStage.getIcons().add(icon);
         primaryStage.show();
     }
+public static void hangleClick(MouseEvent e){
 
+        int x = (int) e.getX();
+        int y = (int) e.getY();
+        Color color = pixelReader.getColor(y, x);
+        int red = (int) (color.getRed() * 255);
+        int green = (int) (color.getGreen() * 255);
+        int blue = (int) (color.getBlue() * 255);
+        int intensity = (red + green + blue) / 3;
+        Xcor.setText(Integer.toString(x));
+        Ycor.setText(Integer.toString(y));
+        Cocor.setText(String.valueOf(intensity));
+
+
+}
 
 
 }
