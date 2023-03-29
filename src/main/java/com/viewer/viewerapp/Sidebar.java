@@ -8,12 +8,13 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 
-import static com.viewer.viewerapp.ImageHandler.artboard2;
-
 public class Sidebar extends VBox {
 
-    public Sidebar() {
+    private final Artboard artboard;
+
+    public Sidebar(Artboard artboard) {
         super();
+        this.artboard = artboard;
         setSpacing(10);
         setAlignment(Pos.CENTER);
         setPadding(new Insets(10));
@@ -33,23 +34,7 @@ public class Sidebar extends VBox {
         // Create buttons and add them to the sidebar
         getChildren().addAll(selectButton, zoomButton, cropButton, flipHButton, flipVButton, rotateButton, rSelectorButton);
 
-        flipHButton.setOnAction(event -> {
-            if (artboard2.getImageView() != null) {
-                FlipperFX.Horfrip(artboard2);
-            }
-        });
-
-        flipVButton.setOnAction(event -> {
-            if (artboard2.getImageView() != null) {
-                FlipperFX.VertFlip(artboard2);
-            }
-        });
-
-        cropButton.setOnAction(event -> {
-            if (artboard2.getImageView() != null) {
-                Crop.crop(artboard2);
-            }
-        });
+        setupButtonActions(flipHButton, flipVButton, cropButton);
     }
 
     private Button createButton(String tooltipText, String glyphName) {
@@ -60,5 +45,25 @@ public class Sidebar extends VBox {
         button.setGraphic(icon);
         button.setTooltip(new Tooltip(tooltipText));
         return button;
+    }
+
+    private void setupButtonActions(Button flipHButton, Button flipVButton, Button cropButton) {
+        flipHButton.setOnAction(event -> {
+            if (artboard.getImageView() != null) {
+                FlipperFX.flipImage(artboard, true);
+            }
+        });
+
+        flipVButton.setOnAction(event -> {
+            if (artboard.getImageView() != null) {
+                FlipperFX.flipImage(artboard, false);
+            }
+        });
+
+        cropButton.setOnAction(event -> {
+            if (artboard.getImageView() != null) {
+                Crop.crop(artboard);
+            }
+        });
     }
 }

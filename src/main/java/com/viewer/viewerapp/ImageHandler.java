@@ -8,7 +8,6 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelReader;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -21,49 +20,23 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 public class ImageHandler {
 
     private static final ImageFileFilter imageFileFilter = new ImageFileFilter();
     private static final int INTENSITY_SCALAR = 3;
-    static Artboard artboard2;
     private static Image image;
 
+    private ImageHandler() {
+    }
 
     public static Image getImage() {
         return image;
     }
 
-    public static void setArtboard(Artboard artboard) {
-        ImageHandler.artboard2 = artboard;
-    }
-
-    private Image createImageFromXLSX(File file) throws IOException, InvalidFormatException {
-        try (Workbook workbook = new XSSFWorkbook(file)) {
-            Sheet sheet = workbook.getSheetAt(0);
-            int rowCount = sheet.getLastRowNum() + 1;
-            int columnCount = sheet.getRow(0).getLastCellNum();
-            BufferedImage bufferedImage = new BufferedImage(columnCount, rowCount, BufferedImage.TYPE_INT_RGB);
-            for (int row = 0; row < rowCount; row++) {
-                for (int column = 0; column < columnCount; column++) {
-                    Cell cell = sheet.getRow(row).getCell(column);
-                    if (cell != null && cell.getCellType() == CellType.NUMERIC) {
-                        int value = (int) cell.getNumericCellValue();
-                        Color color = Color.rgb(value, value, value);
-                        int red = (int) (color.getRed() * 255);
-                        int green = (int) (color.getGreen() * 255);
-                        int blue = (int) (color.getBlue() * 255);
-                        int rgb = (red << 16) | (green << 8) | blue;
-                        bufferedImage.setRGB(column, row, rgb);
-                    }
-                }
-            }
-            return SwingFXUtils.toFXImage(bufferedImage, null);
-        }
-    }
-
-    public void choosePicture() {
+    public static void choosePicture(List<Artboard> artboards) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(imageFileFilter.getDescription(), "*.jpg", "*.jpeg", "*.tif", "*.tiff", "*.png", "*.xlsx"));
         File file = fileChooser.showOpenDialog(null);
@@ -77,7 +50,9 @@ public class ImageHandler {
                     image = new Image(file.toURI().toString());
                 }
 
-                Artboard.updateAllArtboards();
+                for (Artboard artboard : artboards) {
+                    artboard.setImage(image);
+                }
 
             } catch (IOException | InvalidFormatException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -89,27 +64,7 @@ public class ImageHandler {
         }
     }
 
-    public Workbook toWorkbook() {
-        Workbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Image Data");
-
-        PixelReader pixelReader = image.getPixelReader();
-        for (int i = 0; i < image.getHeight(); i++) {
-            Row row = sheet.createRow(i);
-            for (int j = 0; j < image.getWidth(); j++) {
-                Cell cell = row.createCell(j);
-                Color color = pixelReader.getColor(j, i);
-                int red = (int) (color.getRed() * 255);
-                int green = (int) (color.getGreen() * 255);
-                int blue = (int) (color.getBlue() * 255);
-                int intensity = (red + green + blue) / INTENSITY_SCALAR;
-                cell.setCellValue(intensity);
-            }
-        }
-        return workbook;
-    }
-
-    public void saveFile() {
+    public static void saveFile(Artboard artboard) {
         RadioButton pngButton = new RadioButton("PNG");
         RadioButton xlsxButton = new RadioButton("XLSX");
         ToggleGroup fileTypeGroup = new ToggleGroup();
@@ -148,9 +103,9 @@ public class ImageHandler {
         }
         try {
             if (pngButton.isSelected()) {
-                ImageView imageView = artboard2.getImageView();
-                WritableImage imageToSave = imageView.snapshot(null, null);
-                BufferedImage bufferedImage = SwingFXUtils.fromFXImage(imageToSave, null);
+                ImageView imageView = artboard.getImageView();
+                Image imageToSave = imageView.getImage(); // Get the image directly from the ImageView
+                BufferedImage bufferedImage = SwingFXUtils.fromFXImage(imageToSave, null); // Convert the image to a BufferedImage
                 ImageIO.write(bufferedImage, extension, fileToSave);
             } else {
                 Workbook workbook = toWorkbook();
@@ -158,15 +113,57 @@ public class ImageHandler {
                 workbook.write(fos);
                 fos.close();
             }
-
             showSuccessAlert();
         } catch (Exception ex) {
             showErrorAlert(ex);
         }
     }
 
+    private static Image createImageFromXLSX(File file) throws IOException, InvalidFormatException {
+        try (Workbook workbook = new XSSFWorkbook(file)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            int rowCount = sheet.getLastRowNum() + 1;
+            int columnCount = sheet.getRow(0).getLastCellNum();
+            BufferedImage bufferedImage = new BufferedImage(columnCount, rowCount, BufferedImage.TYPE_INT_RGB);
+            for (int row = 0; row < rowCount; row++) {
+                for (int column = 0; column < columnCount; column++) {
+                    Cell cell = sheet.getRow(row).getCell(column);
+                    if (cell != null && cell.getCellType() == CellType.NUMERIC) {
+                        int value = (int) cell.getNumericCellValue();
+                        Color color = Color.rgb(value, value, value);
+                        int red = (int) (color.getRed() * 255);
+                        int green = (int) (color.getGreen() * 255);
+                        int blue = (int) (color.getBlue() * 255);
+                        int rgb = (red << 16) | (green << 8) | blue;
+                        bufferedImage.setRGB(column, row, rgb);
+                    }
+                }
+            }
+            return SwingFXUtils.toFXImage(bufferedImage, null);
+        }
+    }
 
-    private void showSuccessAlert() {
+    private static Workbook toWorkbook() {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Image Data");
+
+        PixelReader pixelReader = image.getPixelReader();
+        for (int i = 0; i < image.getHeight(); i++) {
+            Row row = sheet.createRow(i);
+            for (int j = 0; j < image.getWidth(); j++) {
+                Cell cell = row.createCell(j);
+                Color color = pixelReader.getColor(j, i);
+                int red = (int) (color.getRed() * 255);
+                int green = (int) (color.getGreen() * 255);
+                int blue = (int) (color.getBlue() * 255);
+                int intensity = (red + green + blue) / INTENSITY_SCALAR;
+                cell.setCellValue(intensity);
+            }
+        }
+        return workbook;
+    }
+
+    private static void showSuccessAlert() {
         Alert successDialog = new Alert(Alert.AlertType.INFORMATION);
         successDialog.setTitle("Success");
         successDialog.setHeaderText(null);
@@ -174,7 +171,7 @@ public class ImageHandler {
         successDialog.showAndWait();
     }
 
-    private void showErrorAlert(Exception ex) {
+    private static void showErrorAlert(Exception ex) {
         Alert errorDialog = new Alert(Alert.AlertType.ERROR);
         errorDialog.setTitle("Error");
         errorDialog.setHeaderText(null);
@@ -182,3 +179,4 @@ public class ImageHandler {
         errorDialog.showAndWait();
     }
 }
+

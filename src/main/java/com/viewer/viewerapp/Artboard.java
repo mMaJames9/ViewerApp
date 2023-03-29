@@ -8,25 +8,18 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 public class Artboard extends GridPane {
-
-    private static final List<Artboard> allArtboards = new ArrayList<>();
     private Ruler horizontalRuler;
     private ImageView imageView;
     private Ruler verticalRuler;
     private Grid grid;
-
+    private double originalImageWidth;
+    private double originalImageHeight;
 
     public Artboard() {
-        allArtboards.add(this);
         setHgap(10);
         setVgap(10);
 
-        // Set column and row constraints
         ColumnConstraints column1 = new ColumnConstraints(50);
         ColumnConstraints column2 = new ColumnConstraints();
         column2.setFillWidth(true);
@@ -38,41 +31,27 @@ public class Artboard extends GridPane {
         getColumnConstraints().addAll(column1, column2);
         getRowConstraints().addAll(row1, row2);
 
-        // Add rulers to appropriate cells
         addRulers();
-
-        // Add grid to appropriate cell
         addGrid();
 
-
-        // Listen to changes in width and height to fit the image
         widthProperty().addListener((observable, oldWidth, newWidth) -> fitImage());
         heightProperty().addListener((observable, oldHeight, newHeight) -> fitImage());
     }
 
-    public static void updateAllArtboards() throws IOException {
-        for (Artboard artboard : allArtboards) {
-            artboard.setImage(ImageHandler.getImage());
-        }
-    }
-
     public void setImage(Image image) {
-
-        // Clear all existing children
         getChildren().clear();
 
         imageView = new ImageView(image);
         imageView.setPreserveRatio(true);
         imageView.setSmooth(true);
 
-        // Add new ImageView to appropriate cell and fit to height
+        originalImageWidth = image.getWidth();
+        originalImageHeight = image.getHeight();
+
         setConstraints(imageView, 1, 1);
         getChildren().add(imageView);
 
-        // Add rulers
         addRulers();
-
-        // Make sure grid is on top of image
         addGrid();
         grid.toFront();
 
@@ -83,13 +62,23 @@ public class Artboard extends GridPane {
         imageView = (ImageView) getChildren().stream().filter(node -> node instanceof ImageView).findFirst().orElse(null);
         if (imageView != null) {
             double availableSpace = getHeight() - getInsets().getTop() - getInsets().getBottom() - getRowConstraints().get(0).getPrefHeight() - getVgap();
-            double aspectRatio = imageView.getImage().getWidth() / imageView.getImage().getHeight();
+            double aspectRatio = originalImageWidth / originalImageHeight;
             double imageWidth = Math.min(availableSpace, availableSpace * aspectRatio);
             double imageHeight = Math.min(availableSpace, availableSpace / aspectRatio);
             imageView.setFitWidth(imageWidth);
             imageView.setFitHeight(imageHeight);
             getRowConstraints().get(1).setVgrow(Priority.NEVER);
             getColumnConstraints().get(1).setHgrow(Priority.NEVER);
+
+            imageView.fitWidthProperty().addListener((observable, oldWidth, newWidth) -> {
+                horizontalRuler.setRulerWidth(newWidth.doubleValue());
+                grid.drawGrid();
+            });
+
+            imageView.fitHeightProperty().addListener((observable, oldHeight, newHeight) -> {
+                verticalRuler.setRulerHeight(newHeight.doubleValue());
+                grid.drawGrid();
+            });
         }
     }
 
@@ -102,8 +91,8 @@ public class Artboard extends GridPane {
     }
 
     public void addRulers() {
-        horizontalRuler = new Ruler(Orientation.HORIZONTAL);
-        verticalRuler = new Ruler(Orientation.VERTICAL);
+        horizontalRuler = new Ruler(Orientation.HORIZONTAL, getImageWidth());
+        verticalRuler = new Ruler(Orientation.VERTICAL, getImageHeight());
         setConstraints(horizontalRuler, 1, 0);
         setConstraints(verticalRuler, 0, 1);
         getChildren().addAll(getRulers());
@@ -120,26 +109,19 @@ public class Artboard extends GridPane {
     public void addGrid() {
         grid = new Grid(horizontalRuler, verticalRuler);
         setConstraints(grid, 1, 1);
-        getChildren().addAll(getGrid());
+        getChildren().add(grid);
+        grid.toFront();
+    }
+
+    public double getImageWidth() {
+        return originalImageWidth;
+    }
+
+    public double getImageHeight() {
+        return originalImageHeight;
     }
 
     public ImageView getImageView() {
         return imageView;
-    }
-
-    public double getImageWidth() {
-        if (imageView != null && imageView.getImage() != null) {
-            return imageView.getImage().getWidth();
-        } else {
-            return 0;
-        }
-    }
-
-    public double getImageHeight() {
-        if (imageView != null && imageView.getImage() != null) {
-            return imageView.getImage().getHeight();
-        } else {
-            return 0;
-        }
     }
 }

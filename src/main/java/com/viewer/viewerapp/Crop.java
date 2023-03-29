@@ -1,14 +1,13 @@
 package com.viewer.viewerapp;
 
-import javafx.geometry.Rectangle2D;
+import javafx.beans.binding.Bindings;
+import javafx.event.EventHandler;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.scene.SnapshotParameters;
-import javafx.scene.effect.BlendMode;
-import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
+import javafx.scene.image.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -20,268 +19,469 @@ import java.util.List;
 
 public class Crop {
 
+    private static final double HANDLE_SIZE = 10;
+
     public static void crop(Artboard artboard) {
         ImageView imageView = artboard.getImageView();
-        // Create a new Stage to display the cropping interface
+        Stage cropStage = createCropStage(imageView, artboard);
+        cropStage.show();
+    }
+
+    private static Stage createCropStage(ImageView imageView, Artboard artboard) {
         Stage cropStage = new Stage(StageStyle.UTILITY);
         cropStage.setResizable(false);
 
-        // Create a new Pane to hold the ImageView and the crop rectangle
+        Pane pane = createCropPane(imageView, artboard, cropStage);
+        Scene scene = new Scene(pane);
+        cropStage.setScene(scene);
+
+        return cropStage;
+    }
+
+    private static Pane createCropPane(ImageView imageView, Artboard artboard, Stage cropStage) {
         Pane pane = new Pane();
         pane.setPrefSize(imageView.getFitWidth(), imageView.getFitHeight());
 
-        // Create a new ImageView to display the original image
+        ImageView originalImageView = createOriginalImageView(imageView);
+        pane.getChildren().add(originalImageView);
+
+        Rectangle cropRectangle = createCropRectangle(pane);
+        pane.getChildren().add(cropRectangle);
+
+        List<Rectangle> handleRectangles = createHandleRectangles(cropRectangle);
+        pane.getChildren().addAll(handleRectangles);
+
+        Rectangle topRectangle = createSemiTransparentRectangle();
+        Rectangle bottomRectangle = createSemiTransparentRectangle();
+        Rectangle leftRectangle = createSemiTransparentRectangle();
+        Rectangle rightRectangle = createSemiTransparentRectangle();
+
+        pane.getChildren().addAll(topRectangle, bottomRectangle, leftRectangle, rightRectangle);
+
+        bindSemiTransparentRectangles(pane, cropRectangle, topRectangle, bottomRectangle, leftRectangle, rightRectangle);
+
+        setCropRectangleEventHandlers(cropRectangle, handleRectangles, originalImageView);
+        setHandleRectangleEventHandlers(handleRectangles, cropRectangle, originalImageView);
+        setEnterKeyEventHandler(artboard, cropStage, originalImageView, cropRectangle);
+
+        return pane;
+    }
+
+    private static Rectangle createSemiTransparentRectangle() {
+        Rectangle semiTransparentRectangle = new Rectangle();
+        semiTransparentRectangle.setFill(Color.BLACK);
+        semiTransparentRectangle.setOpacity(0.5);
+        return semiTransparentRectangle;
+    }
+
+    private static void bindSemiTransparentRectangles(Pane pane, Rectangle cropRectangle, Rectangle topRectangle, Rectangle bottomRectangle, Rectangle leftRectangle, Rectangle rightRectangle) {
+        topRectangle.widthProperty().bind(pane.widthProperty());
+        topRectangle.heightProperty().bind(cropRectangle.yProperty());
+        topRectangle.xProperty().bind(pane.layoutXProperty());
+        topRectangle.yProperty().bind(pane.layoutYProperty());
+
+        bottomRectangle.widthProperty().bind(pane.widthProperty());
+        bottomRectangle.heightProperty().bind(Bindings.subtract(pane.heightProperty(), Bindings.add(cropRectangle.yProperty(), cropRectangle.heightProperty())));
+        bottomRectangle.xProperty().bind(pane.layoutXProperty());
+        bottomRectangle.yProperty().bind(cropRectangle.yProperty().add(cropRectangle.heightProperty()));
+
+        leftRectangle.widthProperty().bind(cropRectangle.xProperty());
+        leftRectangle.heightProperty().bind(cropRectangle.heightProperty());
+        leftRectangle.xProperty().bind(pane.layoutXProperty());
+        leftRectangle.yProperty().bind(cropRectangle.yProperty());
+
+        rightRectangle.widthProperty().bind(Bindings.subtract(pane.widthProperty(), Bindings.add(cropRectangle.xProperty(), cropRectangle.widthProperty())));
+        rightRectangle.heightProperty().bind(cropRectangle.heightProperty());
+        rightRectangle.xProperty().bind(cropRectangle.xProperty().add(cropRectangle.widthProperty()));
+        rightRectangle.yProperty().bind(cropRectangle.yProperty());
+    }
+
+    private static ImageView createOriginalImageView(ImageView imageView) {
         ImageView originalImageView = new ImageView(imageView.getImage());
         originalImageView.setPreserveRatio(true);
         originalImageView.setFitWidth(imageView.getFitWidth());
         originalImageView.setFitHeight(imageView.getFitHeight());
 
-        // Create a new Rectangle to darken the area outside the crop rectangle
-        Rectangle backgroundRectangle = new Rectangle(pane.getPrefWidth(), pane.getPrefHeight(), Color.BLACK);
-        backgroundRectangle.setOpacity(0.5);
-        backgroundRectangle.setBlendMode(BlendMode.DIFFERENCE);
-        pane.getChildren().add(backgroundRectangle);
+        return originalImageView;
+    }
 
-        pane.getChildren().add(originalImageView);
-
-        // Create a new Rectangle to define the crop area
+    private static Rectangle createCropRectangle(Pane pane) {
         Rectangle cropRectangle = new Rectangle();
         cropRectangle.setFill(Color.TRANSPARENT);
         cropRectangle.setStroke(Color.WHITE);
         cropRectangle.setStrokeWidth(2);
         cropRectangle.setOpacity(1);
-        pane.getChildren().add(cropRectangle);
+        cropRectangle.setWidth(pane.getPrefWidth());
+        cropRectangle.setHeight(pane.getPrefHeight());
 
-        // Create 8 handle rectangles to allow the user to resize the crop area
+        return cropRectangle;
+    }
+
+    private static List<Rectangle> createHandleRectangles(Rectangle cropRectangle) {
         List<Rectangle> handleRectangles = new ArrayList<>();
-        for (int i = 0; i < 8; i++) {
-            Rectangle handleRectangle = new Rectangle(8, 8);
-            handleRectangle.setFill(Color.WHITE);
+
+        for (Corner corner : Corner.values()) {
+            Rectangle handleRectangle = new Rectangle(HANDLE_SIZE, HANDLE_SIZE, Color.WHITE);
             handleRectangle.setStroke(Color.BLACK);
             handleRectangle.setStrokeWidth(1);
-            pane.getChildren().add(handleRectangle);
+
+            if (corner.isCorner()) {
+                CornerHandleEventHandler eventHandler = new CornerHandleEventHandler(handleRectangle, cropRectangle, corner, handleRectangles);
+                handleRectangle.setOnMousePressed(eventHandler::onMousePressed);
+                handleRectangle.setOnMouseDragged(eventHandler::onMouseDragged);
+                handleRectangle.setOnMouseReleased(eventHandler::onMouseReleased);
+            } else {
+                SideHandleEventHandler eventHandler = new SideHandleEventHandler(handleRectangle, cropRectangle, corner, handleRectangles);
+                handleRectangle.setOnMousePressed(eventHandler::onMousePressed);
+                handleRectangle.setOnMouseDragged(eventHandler::onMouseDragged);
+                handleRectangle.setOnMouseReleased(eventHandler::onMouseReleased);
+            }
+
+            handleRectangle.setOnMouseEntered(event -> {
+                switch (corner) {
+                    case TOP_LEFT, BOTTOM_RIGHT -> handleRectangle.setCursor(Cursor.NW_RESIZE);
+                    case TOP_RIGHT, BOTTOM_LEFT -> handleRectangle.setCursor(Cursor.NE_RESIZE);
+                    case TOP, BOTTOM -> handleRectangle.setCursor(Cursor.N_RESIZE);
+                    case LEFT, RIGHT -> handleRectangle.setCursor(Cursor.W_RESIZE);
+                }
+            });
+
+            handleRectangle.setOnMouseExited(event -> handleRectangle.setCursor(Cursor.DEFAULT));
+
             handleRectangles.add(handleRectangle);
         }
 
-        // Define the initial position and size of the crop rectangle and handle rectangles
-        double cropX = imageView.getX();
-        double cropY = imageView.getY();
-        double cropWidth = imageView.getFitWidth();
-        double cropHeight = imageView.getFitHeight();
-        updateCropRectangle(cropRectangle, cropX, cropY, cropWidth, cropHeight);
-        updateHandleRectangles(handleRectangles, cropX, cropY, cropWidth, cropHeight);
-
-        // Register event handlers to allow the user to interact with the crop area
-        DragContext dragContext = new DragContext();
-
-        cropRectangle.setOnMousePressed(event -> {
-            dragContext.mouseAnchorX = event.getSceneX();
-            dragContext.mouseAnchorY = event.getSceneY();
-            dragContext.cropX = cropX;
-            dragContext.cropY = cropY;
-            dragContext.cropWidth = cropWidth;
-            dragContext.cropHeight = cropHeight;
-            cropRectangle.setCursor(Cursor.MOVE);
-        });
-
-
-        cropRectangle.setOnMouseDragged(event -> {
-            double deltaX = event.getSceneX() - dragContext.mouseAnchorX;
-            double deltaY = event.getSceneY() - dragContext.mouseAnchorY;
-            double newCropX = dragContext.cropX + deltaX;
-            double newCropY = dragContext.cropY + deltaY;
-            double newCropWidth = dragContext.cropWidth;
-            double newCropHeight = dragContext.cropHeight;
-            getNewCrop(originalImageView, cropRectangle, handleRectangles, newCropX, newCropY, newCropWidth, newCropHeight);
-        });
-
-        // Set the cursor back to default when the user releases the crop rectangle
-        cropRectangle.setOnMouseReleased(event -> cropRectangle.setCursor(Cursor.DEFAULT));
-
-        // Register event handlers for the handle rectangles to allow the user to resize the crop area
-        registerHandleEvents(handleRectangles, originalImageView, cropRectangle);
-
-        // Add the pane to the stage and show the stage
-        Scene scene = new Scene(pane);
-        cropStage.setScene(scene);
-        cropStage.show();
-
-        // Add an event filter for the enter key to validate the crop
-        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.getCode() == KeyCode.ENTER) {
-                // Get the cropped image
-                WritableImage croppedImage = getCroppedImage(originalImageView, cropRectangle);
-
-                // Set the cropped image in the original ImageView
-                artboard.setImage(croppedImage);
-
-                // Close the crop stage
-                cropStage.close();
-
-                // Consume the event to prevent further processing
-                event.consume();
-            }
-        });
-
+        return handleRectangles;
     }
 
-    private static void updateCropRectangle(Rectangle cropRectangle, double x, double y, double width, double height) {
-        cropRectangle.setX(x);
-        cropRectangle.setY(y);
-        cropRectangle.setWidth(width);
-        cropRectangle.setHeight(height);
+    private static void setCropRectangleEventHandlers(Rectangle cropRectangle, List<Rectangle> handleRectangles, ImageView imageView) {
+        CropRectangleEventHandler eventHandler = new CropRectangleEventHandler(cropRectangle, handleRectangles, imageView);
+        cropRectangle.setOnMousePressed(eventHandler::onMousePressed);
+        cropRectangle.setOnMouseDragged(eventHandler::onMouseDragged);
+        cropRectangle.setOnMouseReleased(eventHandler::onMouseReleased);
     }
 
-    private static void updateHandleRectangles(List<Rectangle> handleRectangles, double x, double y, double width, double height) {
-        double handleSize = handleRectangles.get(0).getWidth();
-        handleRectangles.get(0).setX(x - handleSize / 2);
-        handleRectangles.get(0).setY(y - handleSize / 2);
-        handleRectangles.get(1).setX(x + width / 2 - handleSize / 2);
-        handleRectangles.get(1).setY(y - handleSize / 2);
-        handleRectangles.get(2).setX(x + width - handleSize / 2);
-        handleRectangles.get(2).setY(y - handleSize / 2);
-        handleRectangles.get(3).setX(x + width - handleSize / 2);
-        handleRectangles.get(3).setY(y + height / 2 - handleSize / 2);
-        handleRectangles.get(4).setX(x + width - handleSize / 2);
-        handleRectangles.get(4).setY(y + height - handleSize / 2);
-        handleRectangles.get(5).setX(x + width / 2 - handleSize / 2);
-        handleRectangles.get(5).setY(y + height - handleSize / 2);
-        handleRectangles.get(6).setX(x - handleSize / 2);
-        handleRectangles.get(6).setY(y + height - handleSize / 2);
-        handleRectangles.get(7).setX(x - handleSize / 2);
-        handleRectangles.get(7).setY(y + height / 2 - handleSize / 2);
-    }
-
-    private static void registerHandleEvents(List<Rectangle> handleRectangles, ImageView imageView, Rectangle cropRectangle) {
+    private static void setHandleRectangleEventHandlers(List<Rectangle> handleRectangles, Rectangle cropRectangle, ImageView originalImageView) {
         for (int i = 0; i < handleRectangles.size(); i++) {
-            int finalI = i;
-            Rectangle handleRectangle = handleRectangles.get(i);
-            DragContext dragContext = new DragContext();
-            handleRectangle.setOnMousePressed(event -> {
-                dragContext.mouseAnchorX = event.getSceneX();
-                dragContext.mouseAnchorY = event.getSceneY();
-                dragContext.cropX = cropRectangle.getX();
-                dragContext.cropY = cropRectangle.getY();
-                dragContext.cropWidth = cropRectangle.getWidth();
-                dragContext.cropHeight = cropRectangle.getHeight();
-                dragContext.handleIndex = finalI;
-                handleRectangle.setCursor(getCursorForHandle(finalI));
-            });
-            handleRectangle.setOnMouseDragged(event -> {
-                double deltaX = event.getSceneX() - handleRectangle.getWidth() / 2 - dragContext.mouseAnchorX;
-                double deltaY = event.getSceneY() - handleRectangle.getHeight() / 2 - dragContext.mouseAnchorY;
-                double newCropX = dragContext.cropX;
-                double newCropY = dragContext.cropY;
-                double newCropWidth = dragContext.cropWidth;
-                double newCropHeight = dragContext.cropHeight;
-
-                // Update the crop rectangle and handle rectangles based on which handle is being dragged
-                switch (dragContext.handleIndex) {
-                    case 0 -> {
-                        newCropX += deltaX;
-                        newCropY += deltaY;
-                        newCropWidth -= deltaX;
-                        newCropHeight -= deltaY;
-                    }
-                    case 1 -> {
-                        newCropY += deltaY;
-                        newCropHeight -= deltaY;
-                    }
-                    case 2 -> {
-                        newCropY += deltaY;
-                        newCropWidth += deltaX;
-                        newCropHeight -= deltaY;
-                    }
-                    case 3 -> newCropWidth += deltaX;
-                    case 4 -> {
-                        newCropWidth += deltaX;
-                        newCropHeight += deltaY;
-                    }
-                    case 5 -> newCropHeight += deltaY;
-                    case 6 -> {
-                        newCropX += deltaX;
-                        newCropWidth -= deltaX;
-                        newCropHeight += deltaY;
-                    }
-                    case 7 -> {
-                        newCropX += deltaX;
-                        newCropWidth -= deltaX;
-                    }
-                }
-
-                // Make sure the crop rectangle stays within the image bounds
-                if (newCropX < 0) {
-                    newCropX = 0;
-                }
-                if (newCropY < 0) {
-                    newCropY = 0;
-                }
-                if (newCropX + newCropWidth > imageView.getFitWidth()) {
-                    newCropX = imageView.getFitWidth() - newCropWidth;
-                }
-                if (newCropY + newCropHeight > imageView.getFitHeight()) {
-                    newCropY = imageView.getFitHeight() - newCropHeight;
-                }
-
-                updateCropRectangle(cropRectangle, newCropX, newCropY, newCropWidth, newCropHeight);
-                updateHandleRectangles(handleRectangles, newCropX, newCropY, newCropWidth, newCropHeight);
-            });
-            handleRectangle.setOnMouseReleased(event -> handleRectangle.setCursor(getCursorForHandle(finalI)));
+            HandleRectangleEventHandler eventHandler = new HandleRectangleEventHandler(handleRectangles.get(i), cropRectangle, handleRectangles, originalImageView);
+            handleRectangles.get(i).setOnMousePressed(eventHandler::onMousePressed);
+            handleRectangles.get(i).setOnMouseDragged(eventHandler::onMouseDragged);
+            handleRectangles.get(i).setOnMouseReleased(eventHandler::onMouseReleased);
         }
-
     }
 
-    private static void getNewCrop(ImageView imageView, Rectangle cropRectangle, List<Rectangle> handleRectangles, double cropX, double cropY, double cropWidth, double cropHeight) {
-        double imageWidth = imageView.getImage().getWidth();
-        double imageHeight = imageView.getImage().getHeight();
+    private static void setEnterKeyEventHandler(Artboard artboard, Stage cropStage, ImageView originalImageView, Rectangle cropRectangle) {
+        EventHandler<KeyEvent> enterKeyEventHandler = new EventHandler<>() {
+            @Override
+            public void handle(KeyEvent keyEvent) {
+                if (keyEvent.getCode() == KeyCode.ENTER) {
+                    // Get the crop rectangle's position and dimensions
+                    double x = cropRectangle.getX();
+                    double y = cropRectangle.getY();
+                    double width = cropRectangle.getWidth();
+                    double height = cropRectangle.getHeight();
 
-        // Ensure that the crop rectangle stays within the bounds of the image
-        cropX = Math.max(0, cropX);
-        cropY = Math.max(0, cropY);
-        cropWidth = Math.min(imageWidth - cropX, cropWidth);
-        cropHeight = Math.min(imageHeight - cropY, cropHeight);
+                    // Call the updated cropImage method with the new arguments
+                    Image croppedImage = cropImage(originalImageView, x, y, width, height);
 
-        // Update the crop rectangle and handle rectangles
-        updateCropRectangle(cropRectangle, cropX, cropY, cropWidth, cropHeight);
-        updateHandleRectangles(handleRectangles, cropX, cropY, cropWidth, cropHeight);
-    }
+                    // Update the originalImageView and the artboard with the cropped image
+                    originalImageView.setImage(croppedImage);
+                    artboard.setImage(croppedImage);
 
-    private static Cursor getCursorForHandle(int handleIndex) {
-        return switch (handleIndex) {
-            case 0, 4 -> Cursor.NW_RESIZE;
-            case 1, 5 -> Cursor.N_RESIZE;
-            case 2, 6 -> Cursor.NE_RESIZE;
-            case 3, 7 -> Cursor.E_RESIZE;
-            default -> Cursor.DEFAULT;
+                    // Close the crop stage and remove the event handler
+                    cropStage.close();
+                    cropStage.removeEventHandler(KeyEvent.KEY_PRESSED, this);
+                }
+            }
         };
+
+        cropStage.addEventHandler(KeyEvent.KEY_PRESSED, enterKeyEventHandler);
     }
 
-    private static WritableImage getCroppedImage(ImageView imageView, Rectangle cropRectangle) {
-        double x = cropRectangle.getX();
-        double y = cropRectangle.getY();
-        double width = cropRectangle.getWidth();
-        double height = cropRectangle.getHeight();
+    private static void updateHandleRectangles(List<Rectangle> handleRectangles, Rectangle cropRectangle) {
+        for (int i = 0; i < handleRectangles.size(); i++) {
+            Rectangle handleRectangle = handleRectangles.get(i);
+            double x = 0;
+            double y = 0;
 
-        // Check if crop rectangle extends above image view
-        double imageViewY = imageView.getY();
-        if (y < imageViewY) {
-            height -= imageViewY - y;
-            y = imageViewY;
+            switch (i) {
+                case 0 -> {
+                    x = cropRectangle.getX() - HANDLE_SIZE / 2;
+                    y = cropRectangle.getY() - HANDLE_SIZE / 2;
+                }
+                case 1 -> {
+                    x = cropRectangle.getX() + cropRectangle.getWidth() / 2 - HANDLE_SIZE / 2;
+                    y = cropRectangle.getY() - HANDLE_SIZE / 2;
+                }
+                case 2 -> {
+                    x = cropRectangle.getX() + cropRectangle.getWidth() - HANDLE_SIZE / 2;
+                    y = cropRectangle.getY() - HANDLE_SIZE / 2;
+                }
+                case 3 -> {
+                    x = cropRectangle.getX() + cropRectangle.getWidth() - HANDLE_SIZE / 2;
+                    y = cropRectangle.getY() + cropRectangle.getHeight() / 2 - HANDLE_SIZE / 2;
+                }
+                case 4 -> {
+                    x = cropRectangle.getX() + cropRectangle.getWidth() - HANDLE_SIZE / 2;
+                    y = cropRectangle.getY() + cropRectangle.getHeight() - HANDLE_SIZE / 2;
+                }
+                case 5 -> {
+                    x = cropRectangle.getX() + cropRectangle.getWidth() / 2 - HANDLE_SIZE / 2;
+                    y = cropRectangle.getY() + cropRectangle.getHeight() - HANDLE_SIZE / 2;
+                }
+                case 6 -> {
+                    x = cropRectangle.getX() - HANDLE_SIZE / 2;
+                    y = cropRectangle.getY() + cropRectangle.getHeight() - HANDLE_SIZE / 2;
+                }
+                case 7 -> {
+                    x = cropRectangle.getX() - HANDLE_SIZE / 2;
+                    y = cropRectangle.getY() + cropRectangle.getHeight() / 2 - HANDLE_SIZE / 2;
+                }
+            }
+
+            handleRectangle.setX(x);
+            handleRectangle.setY(y);
+        }
+    }
+
+    public static Image cropImage(ImageView imageView, double x, double y, double width, double height) {
+        Image image = imageView.getImage();
+
+        // Get the scale factors for the ImageView
+        double scaleX = image.getWidth() / imageView.getBoundsInLocal().getWidth();
+        double scaleY = image.getHeight() / imageView.getBoundsInLocal().getHeight();
+
+        // Convert the crop rectangle's coordinates to the original image's coordinates
+        x = Math.max(0, x * scaleX);
+        y = Math.max(0, y * scaleY);
+        width = Math.min(image.getWidth() - x, width * scaleX);
+        height = Math.min(image.getHeight() - y, height * scaleY);
+
+        // Create a writable image with the cropped dimensions
+        WritableImage croppedImage = new WritableImage((int) width, (int) height);
+
+        // Copy the pixels from the original image to the cropped image
+        PixelReader pixelReader = image.getPixelReader();
+        PixelWriter pixelWriter = croppedImage.getPixelWriter();
+
+        for (int readY = (int) y, writeY = 0; readY < y + height; readY++, writeY++) {
+            for (int readX = (int) x, writeX = 0; readX < x + width; readX++, writeX++) {
+                // Ensure the pixel writer's x and y indexes are within the writable image's bounds
+                if (writeX >= 0 && writeX < croppedImage.getWidth() && writeY >= 0 && writeY < croppedImage.getHeight()) {
+                    Color color = pixelReader.getColor(readX, readY);
+                    pixelWriter.setColor(writeX, writeY, color);
+                }
+            }
         }
 
-        SnapshotParameters snapshotParameters = new SnapshotParameters();
-        snapshotParameters.setFill(Color.TRANSPARENT);
-        snapshotParameters.setViewport(new Rectangle2D(x, y, width, height));
-        return imageView.snapshot(snapshotParameters, null);
+        return croppedImage;
     }
 
-    private static class DragContext {
-        double mouseAnchorX;
-        double mouseAnchorY;
-        double cropX;
-        double cropY;
-        double cropWidth;
-        double cropHeight;
-        int handleIndex;
+    private static void updateCropRectangle(Rectangle cropRectangle, Rectangle handleRectangle, int handleIndex) {
+        double newX = cropRectangle.getX();
+        double newY = cropRectangle.getY();
+        double newWidth = cropRectangle.getWidth();
+        double newHeight = cropRectangle.getHeight();
+
+        switch (handleIndex) {
+            case 0 -> {
+                newWidth += newX - handleRectangle.getX();
+                newHeight += newY - handleRectangle.getY();
+                newX = handleRectangle.getX();
+                newY = handleRectangle.getY();
+            }
+            case 1 -> {
+                newHeight += newY - handleRectangle.getY();
+                newY = handleRectangle.getY();
+            }
+            case 2 -> {
+                newWidth = handleRectangle.getX() - newX + HANDLE_SIZE / 2;
+                newHeight += newY - handleRectangle.getY();
+                newY = handleRectangle.getY();
+            }
+            case 3 -> newWidth = handleRectangle.getX() - newX + HANDLE_SIZE / 2;
+            case 4 -> {
+                newWidth = handleRectangle.getX() - newX + HANDLE_SIZE / 2;
+                newHeight = handleRectangle.getY() - newY + HANDLE_SIZE / 2;
+            }
+            case 5 -> newHeight = handleRectangle.getY() - newY + HANDLE_SIZE / 2;
+            case 6 -> {
+                newWidth += newX - handleRectangle.getX();
+                newHeight = handleRectangle.getY() - newY + HANDLE_SIZE / 2;
+                newX = handleRectangle.getX();
+            }
+            case 7 -> {
+                newWidth += newX - handleRectangle.getX();
+                newX = handleRectangle.getX();
+            }
+        }
+
+        cropRectangle.setX(newX);
+        cropRectangle.setY(newY);
+        cropRectangle.setWidth(newWidth);
+        cropRectangle.setHeight(newHeight);
     }
+
+    public enum Corner {
+        TOP_LEFT(), TOP(), TOP_RIGHT(), RIGHT(), BOTTOM_RIGHT(), BOTTOM(), BOTTOM_LEFT(), LEFT();
+
+        Corner() {
+        }
+
+        public boolean isCorner() {
+            return this == TOP_LEFT || this == TOP_RIGHT || this == BOTTOM_LEFT || this == BOTTOM_RIGHT;
+        }
+    }
+
+    private static class CornerHandleEventHandler extends HandleEventHandler {
+        public CornerHandleEventHandler(Rectangle handleRectangle, Rectangle cropRectangle, Corner corner, List<Rectangle> handleRectangles) {
+            super(handleRectangle, cropRectangle, corner, handleRectangles);
+        }
+
+        @Override
+        protected void updateCropRectangle(double newX, double newY) {
+            switch (corner) {
+                case TOP_LEFT -> {
+                    cropRectangle.setWidth(cropRectangle.getWidth() + (cropRectangle.getX() - newX));
+                    cropRectangle.setHeight(cropRectangle.getHeight() + (cropRectangle.getY() - newY));
+                    cropRectangle.setX(newX);
+                    cropRectangle.setY(newY);
+                }
+                case TOP_RIGHT -> {
+                    cropRectangle.setWidth(newX - cropRectangle.getX());
+                    cropRectangle.setHeight(cropRectangle.getHeight() + (cropRectangle.getY() - newY));
+                    cropRectangle.setY(newY);
+                }
+                case BOTTOM_LEFT -> {
+                    cropRectangle.setWidth(cropRectangle.getWidth() + (cropRectangle.getX() - newX));
+                    cropRectangle.setHeight(newY - cropRectangle.getY());
+                    cropRectangle.setX(newX);
+                }
+                case BOTTOM_RIGHT -> {
+                    cropRectangle.setWidth(newX - cropRectangle.getX());
+                    cropRectangle.setHeight(newY - cropRectangle.getY());
+                }
+            }
+        }
+    }
+
+    private static class SideHandleEventHandler extends HandleEventHandler {
+        public SideHandleEventHandler(Rectangle handleRectangle, Rectangle cropRectangle, Corner corner, List<Rectangle> handleRectangles) {
+            super(handleRectangle, cropRectangle, corner, handleRectangles);
+        }
+
+        @Override
+        protected void updateCropRectangle(double newX, double newY) {
+            switch (corner) {
+                case TOP -> {
+                    cropRectangle.setHeight(cropRectangle.getHeight() + (cropRectangle.getY() - newY));
+                    cropRectangle.setY(newY);
+                }
+                case BOTTOM -> cropRectangle.setHeight(newY - cropRectangle.getY());
+                case LEFT -> {
+                    cropRectangle.setWidth(cropRectangle.getWidth() + (cropRectangle.getX() - newX));
+                    cropRectangle.setX(newX);
+                }
+                case RIGHT -> cropRectangle.setWidth(newX - cropRectangle.getX());
+            }
+        }
+    }
+
+    private static class CropRectangleEventHandler {
+        private final Rectangle cropRectangle;
+        private final List<Rectangle> handleRectangles;
+        private final ImageView imageView;
+        private double offsetX;
+        private double offsetY;
+
+        public CropRectangleEventHandler(Rectangle cropRectangle, List<Rectangle> handleRectangles, ImageView imageView) {
+            this.cropRectangle = cropRectangle;
+            this.handleRectangles = handleRectangles;
+            this.imageView = imageView;
+        }
+
+        public void onMousePressed(MouseEvent event) {
+            offsetX = event.getX() - cropRectangle.getX();
+            offsetY = event.getY() - cropRectangle.getY();
+        }
+
+        public void onMouseDragged(MouseEvent event) {
+            double newX = event.getX() - offsetX;
+            double newY = event.getY() - offsetY;
+
+            // Ensure the crop rectangle stays within the image bounds
+            newX = Math.max(0, Math.min(newX, imageView.getFitWidth() - cropRectangle.getWidth()));
+            newY = Math.max(0, Math.min(newY, imageView.getFitHeight() - cropRectangle.getHeight()));
+
+            cropRectangle.setX(newX);
+            cropRectangle.setY(newY);
+
+            updateHandleRectangles(handleRectangles, cropRectangle);
+        }
+
+        public void onMouseReleased(MouseEvent event) {
+            // Do nothing
+        }
+    }
+
+    private record HandleRectangleEventHandler(Rectangle handleRectangle, Rectangle cropRectangle,
+                                               List<Rectangle> handleRectangles, ImageView imageView) {
+
+        public void onMousePressed(MouseEvent event) {
+            // Do nothing
+        }
+
+        public void onMouseDragged(MouseEvent event) {
+            double newX = event.getSceneX() - HANDLE_SIZE / 2;
+            double newY = event.getSceneY() - HANDLE_SIZE / 2;
+
+            // Check if the handle and crop rectangle are within the image bounds
+            if (newX >= 0 && newX <= imageView.getFitWidth() - HANDLE_SIZE && newY >= 0 && newY <= imageView.getFitHeight() - HANDLE_SIZE) {
+                handleRectangle.setX(newX);
+                handleRectangle.setY(newY);
+
+                updateCropRectangle(cropRectangle, handleRectangle, handleRectangles.indexOf(handleRectangle));
+                updateHandleRectangles(handleRectangles, cropRectangle);
+            }
+        }
+
+        public void onMouseReleased(MouseEvent event) {
+            // Do nothing
+        }
+    }
+
+    private static abstract class HandleEventHandler {
+        protected final Rectangle handleRectangle;
+        protected final Rectangle cropRectangle;
+        protected final Corner corner;
+        protected final List<Rectangle> handleRectangles;
+        protected double offsetX;
+        protected double offsetY;
+
+        public HandleEventHandler(Rectangle handleRectangle, Rectangle cropRectangle, Corner corner, List<Rectangle> handleRectangles) {
+            this.handleRectangle = handleRectangle;
+            this.cropRectangle = cropRectangle;
+            this.corner = corner;
+            this.handleRectangles = handleRectangles;
+        }
+
+        public void onMousePressed(MouseEvent event) {
+            offsetX = event.getX() - handleRectangle.getX();
+            offsetY = event.getY() - handleRectangle.getY();
+        }
+
+        public void onMouseDragged(MouseEvent event) {
+            double newX = event.getX() - offsetX;
+            double newY = event.getY() - offsetY;
+            updateCropRectangle(newX, newY);
+            updateHandleRectangles(handleRectangles, cropRectangle);
+        }
+
+        public void onMouseReleased(MouseEvent event) {
+            // Do nothing
+        }
+
+        protected abstract void updateCropRectangle(double newX, double newY);
+    }
+
 }

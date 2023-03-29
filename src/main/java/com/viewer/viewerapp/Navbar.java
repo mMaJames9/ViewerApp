@@ -5,27 +5,53 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 
-import static com.viewer.viewerapp.ImageHandler.artboard2;
+import java.util.Arrays;
 
 public class Navbar extends MenuBar {
 
-    public Navbar(ImageHandler imageHandler) {
+    private final Artboard artboard1;
+    private final Artboard artboard2;
+
+    public Navbar(Artboard artboard1, Artboard artboard2) {
+        this.artboard1 = artboard1;
+        this.artboard2 = artboard2;
 
         Menu fileMenu = createMenu("File", "Open", "Save", "Exit");
         Menu editMenu = createMenu("Edit", "Undo", "Redo", "Cut", "Copy", "Paste", "Delete");
         Menu viewMenu = createMenu("View", "Ruler", "Grid");
         this.getMenus().addAll(fileMenu, editMenu, viewMenu);
 
-        fileMenu.getItems().get(0).setOnAction(event -> imageHandler.choosePicture());
+        setupFileMenuActions(fileMenu);
+        setupViewMenuActions(viewMenu);
+    }
+
+    private Menu createMenu(String menuName, String... itemNames) {
+        Menu menu = new Menu(menuName);
+        for (String itemName : itemNames) {
+            MenuItem item;
+            if (itemName.equals("Ruler") || itemName.equals("Grid")) {
+                item = new CheckMenuItem(itemName);
+            } else {
+                item = new MenuItem(itemName);
+            }
+            menu.getItems().add(item);
+        }
+        return menu;
+    }
+
+    private void setupFileMenuActions(Menu fileMenu) {
+        fileMenu.getItems().get(0).setOnAction(event -> ImageHandler.choosePicture(Arrays.asList(artboard1, artboard2)));
 
         fileMenu.getItems().get(1).setOnAction(event -> {
             if (artboard2.getImageView() != null) {
-                imageHandler.saveFile();
+                ImageHandler.saveFile(artboard2);
             }
         });
 
         fileMenu.getItems().get(2).setOnAction(event -> System.exit(0));
+    }
 
+    private void setupViewMenuActions(Menu viewMenu) {
         CheckMenuItem rulerItem = (CheckMenuItem) viewMenu.getItems().get(0);
         rulerItem.setSelected(true);
         rulerItem.setOnAction(event -> {
@@ -45,19 +71,5 @@ public class Navbar extends MenuBar {
                 artboard2.removeGrid();
             }
         });
-    }
-
-    private Menu createMenu(String menuName, String... itemNames) {
-        Menu menu = new Menu(menuName);
-        for (String itemName : itemNames) {
-            MenuItem item;
-            if (itemName.equals("Ruler") || itemName.equals("Grid")) {
-                item = new CheckMenuItem(itemName);
-            } else {
-                item = new MenuItem(itemName);
-            }
-            menu.getItems().add(item);
-        }
-        return menu;
     }
 }

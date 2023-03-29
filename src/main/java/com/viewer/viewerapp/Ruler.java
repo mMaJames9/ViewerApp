@@ -1,3 +1,4 @@
+// Ruler.java
 package com.viewer.viewerapp;
 
 import javafx.geometry.Insets;
@@ -21,11 +22,13 @@ public class Ruler extends Region {
     private final Orientation orientation;
     private final double majorTickUnit = 100;
     private final double minorTickUnit = 10;
+    private final double originalLength;
     private double width = 0;
     private double height = 0;
 
-    public Ruler(Orientation orientation) {
+    public Ruler(Orientation orientation, double originalLength) {
         this.orientation = orientation;
+        this.originalLength = originalLength;
     }
 
     public double getMajorTickUnit() {
@@ -34,6 +37,14 @@ public class Ruler extends Region {
 
     public double getMinorTickUnit() {
         return minorTickUnit;
+    }
+
+    public void setRulerWidth(double width) {
+        super.setWidth(width);
+    }
+
+    public void setRulerHeight(double height) {
+        super.setHeight(height);
     }
 
     @Override
@@ -59,7 +70,7 @@ public class Ruler extends Region {
             double canvasHeight = height - getInsets().getTop() - getInsets().getBottom();
             gc.strokeLine(0, canvasHeight, width, canvasHeight);
             tickStart = Math.ceil(getInsets().getLeft() / minorTickUnit) * minorTickUnit;
-            tickEnd = Math.floor((width - getInsets().getRight()) / minorTickUnit) * minorTickUnit;
+            tickEnd = Math.floor((originalLength - getInsets().getRight()) / minorTickUnit) * minorTickUnit;
 
             for (double i = tickStart; i <= tickEnd; i += minorTickUnit) {
                 double tickHeight = MINOR_TICK_HEIGHT;
@@ -78,13 +89,12 @@ public class Ruler extends Region {
                 gc.strokeLine(tickPos, canvasHeight - tickHeight, tickPos, canvasHeight);
             }
 
-            // align the canvas to the bottom
             setCanvasAlignment(canvas, Pos.BOTTOM_LEFT);
         } else {
             double canvasWidth = width - getInsets().getLeft() - getInsets().getRight();
             gc.strokeLine(canvasWidth, 0, canvasWidth, height);
             tickStart = Math.ceil(getInsets().getTop() / minorTickUnit) * minorTickUnit;
-            tickEnd = Math.floor((height - getInsets().getBottom()) / minorTickUnit) * minorTickUnit;
+            tickEnd = Math.floor((originalLength - getInsets().getBottom()) / minorTickUnit) * minorTickUnit;
 
             for (double i = tickStart; i <= tickEnd; i += minorTickUnit) {
                 double tickHeight = MINOR_TICK_HEIGHT;
@@ -103,7 +113,6 @@ public class Ruler extends Region {
                 gc.strokeLine(canvasWidth - tickHeight, tickPos, canvasWidth, tickPos);
             }
 
-            // align the canvas to the right
             setCanvasAlignment(canvas, Pos.TOP_RIGHT);
         }
 
@@ -117,10 +126,16 @@ public class Ruler extends Region {
     }
 
     public double getTickPosition(double value) {
+        return value * (getRulerLength() / originalLength);
+    }
+
+    public double getRulerLength() {
         if (orientation == Orientation.HORIZONTAL) {
-            return value - getInsets().getLeft();
+            return getWidth();
         } else {
-            return value + getInsets().getTop();
+            return getHeight();
         }
     }
+
 }
+

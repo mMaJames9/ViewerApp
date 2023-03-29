@@ -5,7 +5,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 
 public class Grid extends Pane {
-
     private static final Color LINE_STROKE = Color.LIMEGREEN;
     private final Ruler horizontalRuler;
     private final Ruler verticalRuler;
@@ -22,7 +21,7 @@ public class Grid extends Pane {
         drawGrid();
     }
 
-    private void drawGrid() {
+    void drawGrid() {
         // Clear any existing grid lines
         getChildren().clear();
 
