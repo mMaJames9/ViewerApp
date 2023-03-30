@@ -3,6 +3,7 @@ package com.viewer.viewerapp;
 import javafx.beans.binding.Bindings;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -46,6 +47,7 @@ public class Crop {
         cropStage.setResizable(false);
 
         VBox container = new VBox();
+        container.setAlignment(Pos.CENTER);
         container.getStyleClass().add("crop-modal");
         Pair<Pane, Rectangle> cropPaneAndRectangle = createCropPane(imageView, artboard, cropStage);
         Pane cropPane = cropPaneAndRectangle.getKey();
