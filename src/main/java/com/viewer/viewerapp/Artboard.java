@@ -53,7 +53,6 @@ public class Artboard extends GridPane {
 
         addRulers();
         addGrid();
-        grid.toFront();
 
         fitImage();
     }

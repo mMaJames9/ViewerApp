@@ -34,7 +34,7 @@ public class Sidebar extends VBox {
         // Create buttons and add them to the sidebar
         getChildren().addAll(selectButton, zoomButton, cropButton, flipHButton, flipVButton, rotateButton, rSelectorButton);
 
-        setupButtonActions(flipHButton, flipVButton, cropButton);
+        setupButtonActions(flipHButton, flipVButton, cropButton, rotateButton);
     }
 
     private Button createButton(String tooltipText, String glyphName) {
@@ -47,7 +47,7 @@ public class Sidebar extends VBox {
         return button;
     }
 
-    private void setupButtonActions(Button flipHButton, Button flipVButton, Button cropButton) {
+    private void setupButtonActions(Button flipHButton, Button flipVButton, Button cropButton, Button rotateButton) {
         flipHButton.setOnAction(event -> {
             if (artboard.getImageView() != null) {
                 FlipperFX.flipImage(artboard, true);
@@ -63,6 +63,12 @@ public class Sidebar extends VBox {
         cropButton.setOnAction(event -> {
             if (artboard.getImageView() != null) {
                 Crop.crop(artboard);
+            }
+        });
+
+        rotateButton.setOnAction(event -> {
+            if (artboard.getImageView() != null) {
+                RotationFX.rotate(artboard);
             }
         });
     }

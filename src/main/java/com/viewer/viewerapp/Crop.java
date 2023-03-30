@@ -5,18 +5,25 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
 import javafx.scene.image.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import javafx.util.Pair;
+import javafx.util.converter.NumberStringConverter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,11 +31,14 @@ import java.util.List;
 public class Crop {
 
     private static final double HANDLE_SIZE = 10;
+    private static IntegerField xEndField;
+    private static IntegerField yEndField;
 
     public static void crop(Artboard artboard) {
         ImageView imageView = artboard.getImageView();
         Stage cropStage = createCropStage(imageView, artboard);
-        cropStage.show();
+        cropStage.initModality(Modality.APPLICATION_MODAL);
+        cropStage.showAndWait();
     }
 
     private static Stage createCropStage(ImageView imageView, Artboard artboard) {
@@ -36,8 +46,12 @@ public class Crop {
         cropStage.setResizable(false);
 
         VBox container = new VBox();
-        Pane cropPane = createCropPane(imageView, artboard, cropStage);
-        Pane inputPane = createInputPane(cropPane);
+        container.getStyleClass().add("crop-modal");
+        Pair<Pane, Rectangle> cropPaneAndRectangle = createCropPane(imageView, artboard, cropStage);
+        Pane cropPane = cropPaneAndRectangle.getKey();
+        Rectangle cropRectangle = cropPaneAndRectangle.getValue();
+        List<Rectangle> handles = createHandleRectangles(cropRectangle);
+        Pane inputPane = createInputPane(artboard, cropStage, imageView, cropRectangle, handles);
         container.getChildren().addAll(cropPane, inputPane);
 
         Scene scene = new Scene(container);
@@ -46,7 +60,7 @@ public class Crop {
         return cropStage;
     }
 
-    private static Pane createCropPane(ImageView imageView, Artboard artboard, Stage cropStage) {
+    private static Pair<Pane, Rectangle> createCropPane(ImageView imageView, Artboard artboard, Stage cropStage) {
         Pane pane = new Pane();
         pane.setPrefSize(imageView.getFitWidth(), imageView.getFitHeight());
 
@@ -72,7 +86,7 @@ public class Crop {
         setHandleRectangleEventHandlers(handleRectangles, cropRectangle, originalImageView);
         setEnterKeyEventHandler(artboard, cropStage, originalImageView, cropRectangle);
 
-        return pane;
+        return new Pair<>(pane, cropRectangle);
     }
 
     private static Rectangle createSemiTransparentRectangle() {
@@ -333,7 +347,7 @@ public class Crop {
         cropRectangle.setHeight(newHeight);
     }
 
-    private static Pane createInputPane(Pane cropPane) {
+    private static Pane createInputPane(Artboard artboard, Stage cropStage, ImageView originalImageView, Rectangle cropRectangle, List<Rectangle> handles) {
         VBox inputPane = new VBox();
         inputPane.setPadding(new Insets(10, 10, 10, 10));
         inputPane.setSpacing(5);
@@ -341,54 +355,112 @@ public class Crop {
         Label label = new Label("Enter Trim Dimensions");
         inputPane.getChildren().add(label);
 
+        HBox axesPanes = new HBox(5);
+        HBox.setHgrow(axesPanes, Priority.ALWAYS); // Make the axesPanes responsive
+
         HBox xAxisFields = new HBox(5);
         IntegerField xStartField = new IntegerField();
-        xStartField.setPromptText("Xstart");
-        IntegerField xEndField = new IntegerField();
-        xEndField.setPromptText("Xend");
+        xStartField.setPromptText("X-start");
+        xStartField.setEditable(false);
+        xEndField = new IntegerField();
+        xEndField.setPromptText("X-end");
+        xEndField.setEditable(false);
         xAxisFields.getChildren().addAll(xStartField, xEndField);
         TitledPane xAxisPane = new TitledPane("X axis", xAxisFields);
-        inputPane.getChildren().add(xAxisPane);
 
         HBox yAxisFields = new HBox(5);
         IntegerField yStartField = new IntegerField();
-        yStartField.setPromptText("Ystart");
-        IntegerField yEndField = new IntegerField();
-        yEndField.setPromptText("Yend");
+        yStartField.setPromptText("Y-start");
+        yStartField.setEditable(false);
+        yEndField = new IntegerField();
+        yEndField.setPromptText("Y-end");
+        yEndField.setEditable(false);
         yAxisFields.getChildren().addAll(yStartField, yEndField);
         TitledPane yAxisPane = new TitledPane("Y axis", yAxisFields);
-        inputPane.getChildren().add(yAxisPane);
+
+        xStartField.textProperty().bindBidirectional(cropRectangle.xProperty(), new NumberStringConverter());
+        yStartField.textProperty().bindBidirectional(cropRectangle.yProperty(), new NumberStringConverter());
+
+        xEndField.textProperty().bind(Bindings.createStringBinding(() ->
+                Integer.toString((int) (cropRectangle.getX() + cropRectangle.getWidth())), cropRectangle.xProperty(), cropRectangle.widthProperty()));
+
+        yEndField.textProperty().bind(Bindings.createStringBinding(() ->
+                Integer.toString((int) (cropRectangle.getY() + cropRectangle.getHeight())), cropRectangle.yProperty(), cropRectangle.heightProperty()));
+
+        xStartField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                updateHandles(handles, cropRectangle);
+            }
+        });
+
+        xEndField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                double xEnd = Double.parseDouble(newValue);
+                double width = xEnd - cropRectangle.getX();
+                cropRectangle.setWidth(width);
+                updateHandles(handles, cropRectangle);
+            }
+        });
+
+        yStartField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                updateHandles(handles, cropRectangle);
+            }
+        });
+
+        yEndField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.isEmpty()) {
+                double yEnd = Double.parseDouble(newValue);
+                double height = yEnd - cropRectangle.getY();
+                cropRectangle.setHeight(height);
+                updateHandles(handles, cropRectangle);
+            }
+        });
+
+        axesPanes.getChildren().addAll(xAxisPane, yAxisPane);
+        inputPane.getChildren().add(axesPanes);
 
         Button validateButton = new Button("Validate");
         validateButton.setOnAction(e -> {
-            try {
-                double xStart = Double.parseDouble(xStartField.getText());
-                double xEnd = Double.parseDouble(xEndField.getText());
-                double yStart = Double.parseDouble(yStartField.getText());
-                double yEnd = Double.parseDouble(yEndField.getText());
+            // Get the crop rectangle's position and dimensions
+            double x = cropRectangle.getX();
+            double y = cropRectangle.getY();
+            double width = Double.parseDouble(xEndField.getText()) - x;
+            double height = Double.parseDouble(yEndField.getText()) - y;
 
-                // Find the cropRectangle from the cropPane
-                Rectangle cropRectangle = (Rectangle) cropPane.getChildren().stream().filter(node -> node instanceof Rectangle && ((Rectangle) node).getFill() == Color.TRANSPARENT).findFirst().orElse(null);
+            // Call the updated cropImage method with the new arguments
+            Image croppedImage = cropImage(originalImageView, x, y, width, height);
 
-                if (cropRectangle != null) {
-                    cropRectangle.setX(xStart);
-                    cropRectangle.setY(yStart);
-                    cropRectangle.setWidth(xEnd - xStart);
-                    cropRectangle.setHeight(yEnd - yStart);
-                }
+            // Update the originalImageView and the artboard with the cropped image
+            originalImageView.setImage(croppedImage);
+            artboard.setImage(croppedImage);
 
-            } catch (NumberFormatException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Error");
-                alert.setHeaderText("Invalid Input");
-                alert.setContentText("Please enter valid numbers.");
-                alert.showAndWait();
-            }
+            // Close the crop stage and remove the event handler
+            cropStage.close();
         });
 
         inputPane.getChildren().add(validateButton);
 
         return inputPane;
+    }
+
+    private static void updateHandles(List<Rectangle> handles, Rectangle cropRectangle) {
+        double x = cropRectangle.getX();
+        double y = cropRectangle.getY();
+        double width = cropRectangle.getWidth();
+        double height = cropRectangle.getHeight();
+
+        handles.get(0).setX(x - HANDLE_SIZE / 2.0);
+        handles.get(0).setY(y - HANDLE_SIZE / 2.0);
+
+        handles.get(1).setX(x + width - HANDLE_SIZE / 2.0);
+        handles.get(1).setY(y - HANDLE_SIZE / 2.0);
+
+        handles.get(2).setX(x - HANDLE_SIZE / 2.0);
+        handles.get(2).setY(y + height - HANDLE_SIZE / 2.0);
+
+        handles.get(3).setX(x + width - HANDLE_SIZE / 2.0);
+        handles.get(3).setY(y + height - HANDLE_SIZE / 2.0);
     }
 
     public enum Corner {

@@ -24,6 +24,7 @@ public class Main extends Application {
 
         primaryStage.setScene(scene);
         primaryStage.setTitle("Image Viewer");
+        primaryStage.setMaximized(true);
         primaryStage.show();
     }
 

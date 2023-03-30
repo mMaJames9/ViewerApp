@@ -126,3 +126,41 @@
     -fx-text-alignment: right;
 }
 
+/* Crop Modal */
+.crop-modal {
+    -fx-background-color: #303030;
+}
+
+.crop-modal .label {
+    -fx-text-fill: #f0f0f0;
+}
+
+.crop-modal .button {
+    -fx-background-color: #505050;
+    -fx-text-fill: #f0f0f0;
+}
+
+.crop-modal .button:hover {
+    -fx-background-color: #606060;
+}
+
+.crop-modal .button:pressed {
+    -fx-background-color: #404040;
+}
+
+.crop-modal .integer-field {
+    -fx-background-color: #404040;
+    -fx-text-fill: #f0f0f0;
+}
+
+.crop-modal .titled-pane {
+    -fx-text-fill: #f0f0f0;
+}
+
+.crop-modal .titled-pane .title {
+    -fx-text-fill: #f0f0f0;
+}
+
+.crop-modal .titled-pane .content {
+    -fx-background-color: #303030;
+}
