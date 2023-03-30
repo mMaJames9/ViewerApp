@@ -20,15 +20,16 @@ public class Ruler extends Region {
     private static final double LABEL_OFFSET = 5;
 
     private final Orientation orientation;
-    private final double majorTickUnit = 100;
-    private final double minorTickUnit = 10;
     private final double originalLength;
+    private double majorTickUnit;
+    private double minorTickUnit;
     private double width = 0;
     private double height = 0;
 
     public Ruler(Orientation orientation, double originalLength) {
         this.orientation = orientation;
         this.originalLength = originalLength;
+        adjustTickUnits(originalLength);
     }
 
     public double getMajorTickUnit() {
@@ -125,6 +126,10 @@ public class Ruler extends Region {
         StackPane.setMargin(canvas, new Insets(0, 0, 0, 0));
     }
 
+    public double getOriginalLength() {
+        return originalLength;
+    }
+
     public double getTickPosition(double value) {
         return value * (getRulerLength() / originalLength);
     }
@@ -134,6 +139,22 @@ public class Ruler extends Region {
             return getWidth();
         } else {
             return getHeight();
+        }
+    }
+
+    private void adjustTickUnits(double originalLength) {
+        if (originalLength < 1000) {
+            majorTickUnit = 100;
+            minorTickUnit = 10;
+        } else if (originalLength < 2000) {
+            majorTickUnit = 200;
+            minorTickUnit = 20;
+        } else if (originalLength < 5000) {
+            majorTickUnit = 500;
+            minorTickUnit = 50;
+        } else {
+            majorTickUnit = 1000;
+            minorTickUnit = 100;
         }
     }
 

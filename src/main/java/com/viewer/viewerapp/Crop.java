@@ -2,13 +2,17 @@ package com.viewer.viewerapp;
 
 import javafx.beans.binding.Bindings;
 import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
+import javafx.scene.control.*;
 import javafx.scene.image.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
@@ -31,8 +35,12 @@ public class Crop {
         Stage cropStage = new Stage(StageStyle.UTILITY);
         cropStage.setResizable(false);
 
-        Pane pane = createCropPane(imageView, artboard, cropStage);
-        Scene scene = new Scene(pane);
+        VBox container = new VBox();
+        Pane cropPane = createCropPane(imageView, artboard, cropStage);
+        Pane inputPane = createInputPane(cropPane);
+        container.getChildren().addAll(cropPane, inputPane);
+
+        Scene scene = new Scene(container);
         cropStage.setScene(scene);
 
         return cropStage;
@@ -257,19 +265,22 @@ public class Crop {
         width = Math.min(image.getWidth() - x, width * scaleX);
         height = Math.min(image.getHeight() - y, height * scaleY);
 
-        // Create a writable image with the cropped dimensions
-        WritableImage croppedImage = new WritableImage((int) width, (int) height);
+        // Create a writable image with the original dimensions
+        WritableImage croppedImage = new WritableImage((int) image.getWidth(), (int) image.getHeight());
 
         // Copy the pixels from the original image to the cropped image
         PixelReader pixelReader = image.getPixelReader();
         PixelWriter pixelWriter = croppedImage.getPixelWriter();
 
-        for (int readY = (int) y, writeY = 0; readY < y + height; readY++, writeY++) {
-            for (int readX = (int) x, writeX = 0; readX < x + width; readX++, writeX++) {
-                // Ensure the pixel writer's x and y indexes are within the writable image's bounds
-                if (writeX >= 0 && writeX < croppedImage.getWidth() && writeY >= 0 && writeY < croppedImage.getHeight()) {
+        for (int readY = 0; readY < image.getHeight(); readY++) {
+            for (int readX = 0; readX < image.getWidth(); readX++) {
+                if (readX >= x && readX < x + width && readY >= y && readY < y + height) {
+                    // Copy the pixel if it is within the crop rectangle
                     Color color = pixelReader.getColor(readX, readY);
-                    pixelWriter.setColor(writeX, writeY, color);
+                    pixelWriter.setColor(readX, readY, color);
+                } else {
+                    // Set the pixel to transparent if it is outside the crop rectangle
+                    pixelWriter.setColor(readX, readY, Color.TRANSPARENT);
                 }
             }
         }
@@ -320,6 +331,64 @@ public class Crop {
         cropRectangle.setY(newY);
         cropRectangle.setWidth(newWidth);
         cropRectangle.setHeight(newHeight);
+    }
+
+    private static Pane createInputPane(Pane cropPane) {
+        VBox inputPane = new VBox();
+        inputPane.setPadding(new Insets(10, 10, 10, 10));
+        inputPane.setSpacing(5);
+
+        Label label = new Label("Enter Trim Dimensions");
+        inputPane.getChildren().add(label);
+
+        HBox xAxisFields = new HBox(5);
+        IntegerField xStartField = new IntegerField();
+        xStartField.setPromptText("Xstart");
+        IntegerField xEndField = new IntegerField();
+        xEndField.setPromptText("Xend");
+        xAxisFields.getChildren().addAll(xStartField, xEndField);
+        TitledPane xAxisPane = new TitledPane("X axis", xAxisFields);
+        inputPane.getChildren().add(xAxisPane);
+
+        HBox yAxisFields = new HBox(5);
+        IntegerField yStartField = new IntegerField();
+        yStartField.setPromptText("Ystart");
+        IntegerField yEndField = new IntegerField();
+        yEndField.setPromptText("Yend");
+        yAxisFields.getChildren().addAll(yStartField, yEndField);
+        TitledPane yAxisPane = new TitledPane("Y axis", yAxisFields);
+        inputPane.getChildren().add(yAxisPane);
+
+        Button validateButton = new Button("Validate");
+        validateButton.setOnAction(e -> {
+            try {
+                double xStart = Double.parseDouble(xStartField.getText());
+                double xEnd = Double.parseDouble(xEndField.getText());
+                double yStart = Double.parseDouble(yStartField.getText());
+                double yEnd = Double.parseDouble(yEndField.getText());
+
+                // Find the cropRectangle from the cropPane
+                Rectangle cropRectangle = (Rectangle) cropPane.getChildren().stream().filter(node -> node instanceof Rectangle && ((Rectangle) node).getFill() == Color.TRANSPARENT).findFirst().orElse(null);
+
+                if (cropRectangle != null) {
+                    cropRectangle.setX(xStart);
+                    cropRectangle.setY(yStart);
+                    cropRectangle.setWidth(xEnd - xStart);
+                    cropRectangle.setHeight(yEnd - yStart);
+                }
+
+            } catch (NumberFormatException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText("Invalid Input");
+                alert.setContentText("Please enter valid numbers.");
+                alert.showAndWait();
+            }
+        });
+
+        inputPane.getChildren().add(validateButton);
+
+        return inputPane;
     }
 
     public enum Corner {
@@ -482,6 +551,23 @@ public class Crop {
         }
 
         protected abstract void updateCropRectangle(double newX, double newY);
+    }
+
+    public static class IntegerField extends TextField {
+
+        @Override
+        public void replaceText(int start, int end, String text) {
+            if (text.matches("[0-9]*")) {
+                super.replaceText(start, end, text);
+            }
+        }
+
+        @Override
+        public void replaceSelection(String text) {
+            if (text.matches("[0-9]*")) {
+                super.replaceSelection(text);
+            }
+        }
     }
 
 }

@@ -47,7 +47,12 @@ public class ImageHandler {
                 if (extension.equalsIgnoreCase("xlsx")) {
                     image = createImageFromXLSX(file);
                 } else {
-                    image = new Image(file.toURI().toString());
+                    if (extension.equalsIgnoreCase("tif") || extension.equalsIgnoreCase("tiff")) {
+                        BufferedImage bufferedImage = ImageIO.read(file);
+                        image = SwingFXUtils.toFXImage(bufferedImage, null);
+                    } else {
+                        image = new Image(file.toURI().toString());
+                    }
                 }
 
                 for (Artboard artboard : artboards) {
