@@ -1,11 +1,9 @@
 package com.viewer.viewerapp;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -14,6 +12,10 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
+import java.awt.image.BufferedImage;
 
 public class RotationFX {
 
@@ -39,35 +41,42 @@ public class RotationFX {
 
         imageContainer.getChildren().add(previewImageView);
 
-        HBox rotateButtonBox = new HBox(5);
-        rotateButtonBox.setAlignment(Pos.CENTER);
+        TextField angleInput = new TextField();
+        angleInput.setPromptText("Enter rotation angle");
 
-        FontAwesomeIconView rotateLeftIcon = new FontAwesomeIconView(FontAwesomeIcon.ROTATE_LEFT);
-        Button rotateLeftButton = new Button("", rotateLeftIcon);
-        rotateLeftButton.setOnAction(e -> previewImageView.setImage(rotateImage(previewImageView.getImage(), -90)));
+        ChoiceBox<String> directionChoiceBox = new ChoiceBox<>();
+        directionChoiceBox.getItems().addAll("Left", "Right");
+        directionChoiceBox.setValue("Left");
 
-        FontAwesomeIconView rotateRightIcon = new FontAwesomeIconView(FontAwesomeIcon.ROTATE_RIGHT);
-        Button rotateRightButton = new Button("", rotateRightIcon);
-        rotateRightButton.setOnAction(e -> previewImageView.setImage(rotateImage(previewImageView.getImage(), 90)));
+        Button applyRotationButton = new Button("Apply Rotation");
+        applyRotationButton.setOnAction(e -> {
+            try {
+                int angle = Integer.parseInt(angleInput.getText());
+                if (directionChoiceBox.getValue().equals("Right")) {
+                    angle = -angle;
+                }
+                previewImageView.setImage(rotateImage(previewImageView.getImage(), angle));
+            } catch (NumberFormatException ex) {
+                showAlert();
+            }
+        });
 
-        rotateButtonBox.getChildren().addAll(rotateLeftButton, rotateRightButton);
-
-        HBox validateBox = new HBox(5);
-        validateBox.setAlignment(Pos.CENTER);
-        validateBox.setPadding(new Insets(0, 0, 10, 0));
+        HBox rotateInputBox = new HBox(5);
+        rotateInputBox.setAlignment(Pos.CENTER);
+        rotateInputBox.getChildren().addAll(angleInput, new Label("Direction: "), directionChoiceBox, applyRotationButton);
 
         Button validateButton = new Button("Validate");
+        validateButton.getStyleClass().add("button");
         validateButton.setOnAction(e -> {
             imageView.setImage(previewImageView.getImage());
             artboard.setImage(previewImageView.getImage());
             rotateStage.close();
         });
 
-        validateBox.getChildren().add(validateButton);
-
         VBox container = new VBox(10);
+        container.setPadding(new Insets(10));
         container.setAlignment(Pos.CENTER);
-        container.getChildren().addAll(imageContainer, rotateButtonBox, validateBox);
+        container.getChildren().addAll(imageContainer, rotateInputBox, validateButton);
 
         Scene scene = new Scene(container);
         rotateStage.setScene(scene);
@@ -76,8 +85,46 @@ public class RotationFX {
     }
 
     private static Image rotateImage(Image image, int angle) {
-        ImageView tempImageView = new ImageView(image);
-        tempImageView.setRotate(tempImageView.getRotate() + angle);
-        return tempImageView.snapshot(null, null);
+        System.gc();
+
+        BufferedImage bufferedImage = toBufferedImage(image);
+        double radians = Math.toRadians(angle);
+        int width = bufferedImage.getWidth();
+        int height = bufferedImage.getHeight();
+
+        // Calculate the center point of the original image
+        double centerX = width / 2.0;
+        double centerY = height / 2.0;
+
+        // Create a new AffineTransform and apply the translation and rotation
+        AffineTransform at = new AffineTransform();
+        at.translate(centerX, centerY);
+        at.rotate(radians);
+        at.translate(-centerX, -centerY);
+
+        // Create a new image with the same dimensions as the original image
+        BufferedImage rotatedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        AffineTransformOp rotateOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
+        rotateOp.filter(bufferedImage, rotatedImage);
+
+        return toJavaFXImage(rotatedImage);
+    }
+
+    private static BufferedImage toBufferedImage(Image image) {
+        BufferedImage bufferedImage = new BufferedImage((int) image.getWidth(), (int) image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        javafx.embed.swing.SwingFXUtils.fromFXImage(image, bufferedImage);
+        return bufferedImage;
+    }
+
+    private static Image toJavaFXImage(BufferedImage bufferedImage) {
+        return javafx.embed.swing.SwingFXUtils.toFXImage(bufferedImage, null);
+    }
+
+    private static void showAlert() {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Invalid Input");
+        alert.setHeaderText(null);
+        alert.setContentText("Please enter a valid rotation angle.");
+        alert.showAndWait();
     }
 }

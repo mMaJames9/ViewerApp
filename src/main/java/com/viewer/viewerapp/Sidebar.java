@@ -1,12 +1,12 @@
 package com.viewer.viewerapp;
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 public class Sidebar extends VBox {
 
@@ -20,34 +20,37 @@ public class Sidebar extends VBox {
         setPadding(new Insets(10));
         getStyleClass().add("sidebar");
 
-        // Load the FontAwesome.tff font file
-        Font.loadFont(getClass().getResourceAsStream("/fonts/FontAwesome.ttf"), 14);
-
-        Button selectButton = createButton("Select", "MOUSE_POINTER");
-        Button zoomButton = createButton("Zoom Tool", "SEARCH");
-        Button cropButton = createButton("Crop Tool", "CROP");
-        Button flipHButton = createButton("Horizontal Flip Tool", "ARROWS_H");
-        Button flipVButton = createButton("Vertical Flip Tool", "ARROWS_V");
-        Button rotateButton = createButton("Rotate Tool", "REFRESH");
-        Button rSelectorButton = createButton("Region Selector Tool", "PENCIL");
+        Button selectButton = createButton("Select", FontAwesomeSolid.MOUSE_POINTER);
+        Button zoomButton = createButton("Zoom Tool", FontAwesomeSolid.SEARCH);
+        Button cropButton = createButton("Crop Tool", FontAwesomeSolid.CROP);
+        Button flipHButton = createButton("Horizontal Flip Tool", FontAwesomeSolid.ARROWS_ALT_H);
+        Button flipVButton = createButton("Vertical Flip Tool", FontAwesomeSolid.ARROWS_ALT_V);
+        Button rotateButton = createButton("Rotate Tool", FontAwesomeSolid.SYNC_ALT);
+        Button rSelectorButton = createButton("Region Selector Tool", FontAwesomeSolid.PENCIL_ALT);
+        Button analysisButton = createButton("Analysis Tool", FontAwesomeSolid.CHART_LINE);
+        Button colorizeButton = createButton("Color Tool", FontAwesomeSolid.TINT);
+        Button resizeButton = createButton("Resize Tool", FontAwesomeSolid.EXPAND_ALT);
+        Button pixelButton = createButton("Pixel position Tool", FontAwesomeSolid.CROSSHAIRS);
+        Button textButton = createButton("Text Tool", FontAwesomeSolid.TEXT_WIDTH);
 
         // Create buttons and add them to the sidebar
-        getChildren().addAll(selectButton, zoomButton, cropButton, flipHButton, flipVButton, rotateButton, rSelectorButton);
+        getChildren().addAll(selectButton, zoomButton, cropButton, flipHButton, flipVButton, rotateButton, rSelectorButton, analysisButton, colorizeButton, resizeButton, pixelButton, textButton);
 
-        setupButtonActions(flipHButton, flipVButton, cropButton, rotateButton);
+        setupButtonActions(selectButton, zoomButton, cropButton, flipHButton, flipVButton, rotateButton, rSelectorButton, analysisButton, colorizeButton, resizeButton, pixelButton, textButton);
     }
 
-    private Button createButton(String tooltipText, String glyphName) {
+    private Button createButton(String tooltipText, FontAwesomeSolid iconCode) {
         Button button = new Button();
-        FontAwesomeIconView icon = new FontAwesomeIconView();
-        icon.setGlyphName(glyphName);
-        icon.setSize("1.2em");
+        button.getStyleClass().add("button-icon");
+        FontIcon icon = new FontIcon(iconCode);
+        icon.getStyleClass().add("icon");
+        icon.setIconSize(18);
         button.setGraphic(icon);
         button.setTooltip(new Tooltip(tooltipText));
         return button;
     }
 
-    private void setupButtonActions(Button flipHButton, Button flipVButton, Button cropButton, Button rotateButton) {
+    private void setupButtonActions(Button selectButton, Button zoomButton, Button cropButton, Button flipHButton, Button flipVButton, Button rotateButton, Button rSelectorButton, Button analysisButton, Button colorizeButton, Button resizeButton, Button pixelButton, Button textButton) {
         flipHButton.setOnAction(event -> {
             if (artboard.getImageView() != null) {
                 FlipperFX.flipImage(artboard, true);
@@ -69,6 +72,12 @@ public class Sidebar extends VBox {
         rotateButton.setOnAction(event -> {
             if (artboard.getImageView() != null) {
                 RotationFX.rotate(artboard);
+            }
+        });
+
+        pixelButton.setOnAction(event -> {
+            if (artboard.getImageView() != null) {
+                PixelPosition.showPixelPosition(artboard);
             }
         });
     }

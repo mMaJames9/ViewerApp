@@ -36,13 +36,17 @@
 }
 
 .sidebar .button-icon {
-    -fx-background-color: transparent;
+    -fx-background-color: #303030;
     -fx-text-fill: #f0f0f0;
-    -fx-border-color: #303030;
 }
 
+.icon {
+    -fx-fill: #f0f0f0;
+}
+
+
 .sidebar .button-icon:hover {
-    -fx-background-color: #303030;
+    -fx-background-color: #404040;
 }
 
 /* Content */

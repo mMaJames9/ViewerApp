@@ -6,10 +6,11 @@ module com.viewer.viewerapp {
     requires com.dlsc.formsfx;
     requires net.synedra.validatorfx;
     requires org.kordamp.bootstrapfx.core;
-    requires de.jensd.fx.glyphs.fontawesome;
     requires java.desktop;
     requires javafx.swing;
     requires org.apache.poi.ooxml;
+    requires org.kordamp.ikonli.javafx;
+    requires org.kordamp.ikonli.fontawesome5;
 
     opens com.viewer.viewerapp to javafx.fxml;
     exports com.viewer.viewerapp;

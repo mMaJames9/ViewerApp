@@ -21,6 +21,11 @@
             <version>5.2.2</version>
         </dependency>
         <dependency>
+            <groupId>com.github.jai-imageio</groupId>
+            <artifactId>jai-imageio-core</artifactId>
+            <version>1.4.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
             <version>5.2.2</version>
@@ -73,9 +78,14 @@
             <version>0.4.0</version>
         </dependency>
         <dependency>
-            <groupId>de.jensd</groupId>
-            <artifactId>fontawesomefx-fontawesome</artifactId>
-            <version>4.7.0-9.1.2</version>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-javafx</artifactId>
+            <version>12.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-fontawesome5-pack</artifactId>
+            <version>12.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

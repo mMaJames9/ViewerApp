@@ -112,6 +112,14 @@ public class Artboard extends GridPane {
         grid.toFront();
     }
 
+    public boolean hasRulers() {
+        return horizontalRuler != null && verticalRuler != null;
+    }
+
+    public boolean hasGrid() {
+        return grid != null;
+    }
+
     public double getImageWidth() {
         return originalImageWidth;
     }

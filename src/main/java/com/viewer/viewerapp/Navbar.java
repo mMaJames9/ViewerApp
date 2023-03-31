@@ -11,6 +11,8 @@ public class Navbar extends MenuBar {
 
     private final Artboard artboard1;
     private final Artboard artboard2;
+    private CheckMenuItem rulerItem;
+    private CheckMenuItem gridItem;
 
     public Navbar(Artboard artboard1, Artboard artboard2) {
         this.artboard1 = artboard1;
@@ -23,6 +25,7 @@ public class Navbar extends MenuBar {
 
         setupFileMenuActions(fileMenu);
         setupViewMenuActions(viewMenu);
+        updateMenuItems();
     }
 
     private Menu createMenu(String menuName, String... itemNames) {
@@ -40,7 +43,10 @@ public class Navbar extends MenuBar {
     }
 
     private void setupFileMenuActions(Menu fileMenu) {
-        fileMenu.getItems().get(0).setOnAction(event -> ImageHandler.choosePicture(Arrays.asList(artboard1, artboard2)));
+        fileMenu.getItems().get(0).setOnAction(event -> {
+            ImageHandler.choosePicture(Arrays.asList(artboard1, artboard2));
+            updateMenuItems();
+        });
 
         fileMenu.getItems().get(1).setOnAction(event -> {
             if (artboard2.getImageView() != null) {
@@ -52,8 +58,8 @@ public class Navbar extends MenuBar {
     }
 
     private void setupViewMenuActions(Menu viewMenu) {
-        CheckMenuItem rulerItem = (CheckMenuItem) viewMenu.getItems().get(0);
-        rulerItem.setSelected(true);
+        rulerItem = (CheckMenuItem) viewMenu.getItems().get(0);
+
         rulerItem.setOnAction(event -> {
             if (rulerItem.isSelected()) {
                 artboard2.addRulers();
@@ -62,8 +68,7 @@ public class Navbar extends MenuBar {
             }
         });
 
-        CheckMenuItem gridItem = (CheckMenuItem) viewMenu.getItems().get(1);
-        gridItem.setSelected(true);
+        gridItem = (CheckMenuItem) viewMenu.getItems().get(1);
         gridItem.setOnAction(event -> {
             if (gridItem.isSelected()) {
                 artboard2.addGrid();
@@ -71,5 +76,10 @@ public class Navbar extends MenuBar {
                 artboard2.removeGrid();
             }
         });
+    }
+
+    public void updateMenuItems() {
+        rulerItem.setSelected(artboard2.hasRulers());
+        gridItem.setSelected(artboard2.hasGrid());
     }
 }
