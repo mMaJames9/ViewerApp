@@ -1,0 +1,42 @@
+.graduated-arrow-rect {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 0);
+    -fx-stroke-width: 2;
+    -fx-stroke: black;
+}
+
+.text-style {
+    -fx-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-family: "Arial";
+}
+
+.label-style {
+    -fx-font-size: 12px;
+    -fx-text-fill: #000000;
+    -fx-font-family: "Arial";
+}
+
+.text-field-style {
+    -fx-background-color: white;
+    -fx-border-color: #000000;
+    -fx-border-width: 1px;
+    -fx-font-size: 12px;
+    -fx-font-family: "Arial";
+}
+
+.button-style {
+    -fx-background-color: #1E90FF;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-family: "Arial";
+    -fx-background-radius: 0px;
+}
+
+.button-style:hover {
+    -fx-background-color: #4169E1;
+}
+
+.root {
+    -fx-background-color: #f4f4f4;
+}
+
