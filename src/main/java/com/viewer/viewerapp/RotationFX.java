@@ -55,11 +55,14 @@ public class RotationFX {
                 if (directionChoiceBox.getValue().equals("Right")) {
                     angle = -angle;
                 }
-                previewImageView.setImage(rotateImage(previewImageView.getImage(), angle));
+                Image rotatedImage = rotateImage(previewImageView.getImage(), angle, true);
+                previewImageView.setImage(rotatedImage);
+                adjustPreviewImageViewDimensions(previewImageView, rotatedImage);
             } catch (NumberFormatException ex) {
                 showAlert();
             }
         });
+
 
         HBox rotateInputBox = new HBox(5);
         rotateInputBox.setAlignment(Pos.CENTER);
@@ -118,6 +121,21 @@ public class RotationFX {
 
     private static Image toJavaFXImage(BufferedImage bufferedImage) {
         return javafx.embed.swing.SwingFXUtils.toFXImage(bufferedImage, null);
+    }
+
+    private static void adjustPreviewImageViewDimensions(ImageView previewImageView, Image rotatedImage) {
+        double containerWidth = previewImageView.getFitWidth();
+        double containerHeight = previewImageView.getFitHeight();
+
+        double rotatedImageWidth = rotatedImage.getWidth();
+        double rotatedImageHeight = rotatedImage.getHeight();
+
+        double widthRatio = containerWidth / rotatedImageWidth;
+        double heightRatio = containerHeight / rotatedImageHeight;
+        double scaleFactor = Math.min(widthRatio, heightRatio);
+
+        previewImageView.setFitWidth(rotatedImageWidth * scaleFactor);
+        previewImageView.setFitHeight(rotatedImageHeight * scaleFactor);
     }
 
     private static void showAlert() {
