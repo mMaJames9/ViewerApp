@@ -1,14 +1,19 @@
 package com.viewer.viewerapp;
 
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -30,9 +35,9 @@ public class RotationFX {
         Stage rotateStage = new Stage(StageStyle.UTILITY);
         rotateStage.setResizable(false);
 
-        double maxDimension = Math.max(imageView.getFitWidth(), imageView.getFitHeight());
+        double diagonal = Math.sqrt(Math.pow(imageView.getFitWidth(), 2) + Math.pow(imageView.getFitHeight(), 2));
         StackPane imageContainer = new StackPane();
-        imageContainer.setPrefSize(maxDimension, maxDimension);
+        imageContainer.setPrefSize(diagonal, diagonal);
 
         ImageView previewImageView = new ImageView(imageView.getImage());
         previewImageView.setPreserveRatio(true);
@@ -40,46 +45,41 @@ public class RotationFX {
         previewImageView.setFitHeight(imageView.getFitHeight());
 
         imageContainer.getChildren().add(previewImageView);
+        imageContainer.setClip(new Rectangle(diagonal, diagonal));
 
         TextField angleInput = new TextField();
         angleInput.setPromptText("Enter rotation angle");
 
-        ChoiceBox<String> directionChoiceBox = new ChoiceBox<>();
-        directionChoiceBox.getItems().addAll("Left", "Right");
-        directionChoiceBox.setValue("Left");
+        ComboBox<String> directionComboBox = new ComboBox<>(FXCollections.observableArrayList("Left", "Right"));
+        directionComboBox.getSelectionModel().selectFirst();
 
-        Button applyRotationButton = new Button("Apply Rotation");
-        applyRotationButton.setOnAction(e -> {
+        Button validateButton = new Button("Validate");
+        validateButton.setOnAction(event -> {
             try {
                 int angle = Integer.parseInt(angleInput.getText());
-                if (directionChoiceBox.getValue().equals("Right")) {
-                    angle = -angle;
-                }
-                Image rotatedImage = rotateImage(previewImageView.getImage(), angle, true);
-                previewImageView.setImage(rotatedImage);
-                adjustPreviewImageViewDimensions(previewImageView, rotatedImage);
-            } catch (NumberFormatException ex) {
+                String direction = directionComboBox.getValue();
+                int finalAngle = direction.equals("Left") ? -angle : angle;
+                previewImageView.setImage(rotateImage(previewImageView.getImage(), finalAngle));
+            } catch (NumberFormatException e) {
                 showAlert();
             }
         });
 
-
         HBox rotateInputBox = new HBox(5);
         rotateInputBox.setAlignment(Pos.CENTER);
-        rotateInputBox.getChildren().addAll(angleInput, new Label("Direction: "), directionChoiceBox, applyRotationButton);
+        rotateInputBox.getChildren().addAll(angleInput, directionComboBox, validateButton);
 
-        Button validateButton = new Button("Validate");
-        validateButton.getStyleClass().add("button");
-        validateButton.setOnAction(e -> {
+        Button applyButton = new Button("Apply");
+        applyButton.setOnAction(e -> {
             imageView.setImage(previewImageView.getImage());
             artboard.setImage(previewImageView.getImage());
             rotateStage.close();
         });
 
         VBox container = new VBox(10);
-        container.setPadding(new Insets(10));
         container.setAlignment(Pos.CENTER);
-        container.getChildren().addAll(imageContainer, rotateInputBox, validateButton);
+        container.setPadding(new Insets(10));
+        container.getChildren().addAll(imageContainer, rotateInputBox, applyButton);
 
         Scene scene = new Scene(container);
         rotateStage.setScene(scene);
@@ -88,25 +88,19 @@ public class RotationFX {
     }
 
     private static Image rotateImage(Image image, int angle) {
-        System.gc();
-
         BufferedImage bufferedImage = toBufferedImage(image);
         double radians = Math.toRadians(angle);
+        double sin = Math.abs(Math.sin(radians));
+        double cos = Math.abs(Math.cos(radians));
         int width = bufferedImage.getWidth();
         int height = bufferedImage.getHeight();
+        int newWidth = (int) Math.floor(width * cos + height * sin);
+        int newHeight = (int) Math.floor(height * cos + width * sin);
 
-        // Calculate the center point of the original image
-        double centerX = width / 2.0;
-        double centerY = height / 2.0;
-
-        // Create a new AffineTransform and apply the translation and rotation
+        BufferedImage rotatedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
         AffineTransform at = new AffineTransform();
-        at.translate(centerX, centerY);
-        at.rotate(radians);
-        at.translate(-centerX, -centerY);
-
-        // Create a new image with the same dimensions as the original image
-        BufferedImage rotatedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        at.translate((newWidth - width) / 2.0, (newHeight - height) / 2.0);
+        at.rotate(radians, width / 2.0, height / 2.0);
         AffineTransformOp rotateOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
         rotateOp.filter(bufferedImage, rotatedImage);
 
@@ -121,21 +115,6 @@ public class RotationFX {
 
     private static Image toJavaFXImage(BufferedImage bufferedImage) {
         return javafx.embed.swing.SwingFXUtils.toFXImage(bufferedImage, null);
-    }
-
-    private static void adjustPreviewImageViewDimensions(ImageView previewImageView, Image rotatedImage) {
-        double containerWidth = previewImageView.getFitWidth();
-        double containerHeight = previewImageView.getFitHeight();
-
-        double rotatedImageWidth = rotatedImage.getWidth();
-        double rotatedImageHeight = rotatedImage.getHeight();
-
-        double widthRatio = containerWidth / rotatedImageWidth;
-        double heightRatio = containerHeight / rotatedImageHeight;
-        double scaleFactor = Math.min(widthRatio, heightRatio);
-
-        previewImageView.setFitWidth(rotatedImageWidth * scaleFactor);
-        previewImageView.setFitHeight(rotatedImageHeight * scaleFactor);
     }
 
     private static void showAlert() {
