@@ -1,22 +1,19 @@
 package com.viewer.viewerapp;
 
-import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
@@ -35,9 +32,9 @@ public class RotationFX {
         Stage rotateStage = new Stage(StageStyle.UTILITY);
         rotateStage.setResizable(false);
 
-        double diagonal = Math.sqrt(Math.pow(imageView.getFitWidth(), 2) + Math.pow(imageView.getFitHeight(), 2));
+        double maxDimension = Math.max(imageView.getFitWidth(), imageView.getFitHeight());
         StackPane imageContainer = new StackPane();
-        imageContainer.setPrefSize(diagonal, diagonal);
+        imageContainer.setPrefSize(maxDimension, maxDimension);
 
         ImageView previewImageView = new ImageView(imageView.getImage());
         previewImageView.setPreserveRatio(true);
@@ -45,41 +42,41 @@ public class RotationFX {
         previewImageView.setFitHeight(imageView.getFitHeight());
 
         imageContainer.getChildren().add(previewImageView);
-        imageContainer.setClip(new Rectangle(diagonal, diagonal));
 
-        TextField angleInput = new TextField();
-        angleInput.setPromptText("Enter rotation angle");
+        HBox rotateButtonBox = new HBox(10);
+        rotateButtonBox.setAlignment(Pos.CENTER);
 
-        ComboBox<String> directionComboBox = new ComboBox<>(FXCollections.observableArrayList("Left", "Right"));
-        directionComboBox.getSelectionModel().selectFirst();
+        FontIcon rotateLeftIcon = new FontIcon(FontAwesomeSolid.UNDO);
+        Button rotateLeftButton = new Button("", rotateLeftIcon);
+        rotateLeftButton.getStyleClass().add("button-icon");
+        rotateLeftButton.setOnAction(e -> previewImageView.setImage(rotateImage(previewImageView.getImage(), -90)));
+
+        FontIcon rotateRightIcon = new FontIcon(FontAwesomeSolid.REDO);
+        Button rotateRightButton = new Button("", rotateRightIcon);
+        rotateRightButton.getStyleClass().add("button-icon");
+        rotateRightButton.setOnAction(e -> previewImageView.setImage(rotateImage(previewImageView.getImage(), 90)));
+
+        rotateButtonBox.getChildren().addAll(rotateLeftButton, rotateRightButton);
+
+        HBox validateBox = new HBox(5);
+        validateBox.setAlignment(Pos.CENTER);
+        validateBox.setPadding(new Insets(0, 0, 10, 0));
 
         Button validateButton = new Button("Validate");
-        validateButton.setOnAction(event -> {
-            try {
-                int angle = Integer.parseInt(angleInput.getText());
-                String direction = directionComboBox.getValue();
-                int finalAngle = direction.equals("Left") ? -angle : angle;
-                previewImageView.setImage(rotateImage(previewImageView.getImage(), finalAngle));
-            } catch (NumberFormatException e) {
-                showAlert();
-            }
-        });
+        validateButton.getStyleClass().add("button");
 
-        HBox rotateInputBox = new HBox(5);
-        rotateInputBox.setAlignment(Pos.CENTER);
-        rotateInputBox.getChildren().addAll(angleInput, directionComboBox, validateButton);
-
-        Button applyButton = new Button("Apply");
-        applyButton.setOnAction(e -> {
+        validateButton.setOnAction(e -> {
             imageView.setImage(previewImageView.getImage());
             artboard.setImage(previewImageView.getImage());
             rotateStage.close();
         });
 
+        validateBox.getChildren().add(validateButton);
+
         VBox container = new VBox(10);
-        container.setAlignment(Pos.CENTER);
         container.setPadding(new Insets(10));
-        container.getChildren().addAll(imageContainer, rotateInputBox, applyButton);
+        container.setAlignment(Pos.CENTER);
+        container.getChildren().addAll(imageContainer, rotateButtonBox, validateBox);
 
         Scene scene = new Scene(container);
         rotateStage.setScene(scene);
@@ -117,11 +114,4 @@ public class RotationFX {
         return javafx.embed.swing.SwingFXUtils.toFXImage(bufferedImage, null);
     }
 
-    private static void showAlert() {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("Invalid Input");
-        alert.setHeaderText(null);
-        alert.setContentText("Please enter a valid rotation angle.");
-        alert.showAndWait();
-    }
 }

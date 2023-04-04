@@ -32,10 +32,6 @@ public class ImageHandler {
     private ImageHandler() {
     }
 
-    public static Image getImage() {
-        return image;
-    }
-
     public static void choosePicture(List<Artboard> artboards) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(imageFileFilter.getDescription(), "*.jpg", "*.jpeg", "*.tif", "*.tiff", "*.png", "*.xlsx"));

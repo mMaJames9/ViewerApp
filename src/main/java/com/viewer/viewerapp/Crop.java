@@ -7,7 +7,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TitledPane;
 import javafx.scene.image.*;
@@ -47,6 +46,7 @@ public class Crop {
         cropStage.setResizable(false);
 
         VBox container = new VBox();
+        container.setPadding(new Insets(10));
         container.setAlignment(Pos.CENTER);
         container.getStyleClass().add("crop-modal");
         Pair<Pane, Rectangle> cropPaneAndRectangle = createCropPane(imageView, artboard, cropStage);
@@ -351,11 +351,8 @@ public class Crop {
 
     private static Pane createInputPane(Artboard artboard, Stage cropStage, ImageView originalImageView, Rectangle cropRectangle, List<Rectangle> handles) {
         VBox inputPane = new VBox();
-        inputPane.setPadding(new Insets(10, 10, 10, 10));
-        inputPane.setSpacing(5);
-
-        Label label = new Label("Enter Trim Dimensions");
-        inputPane.getChildren().add(label);
+        inputPane.setPadding(new Insets(10));
+        inputPane.setSpacing(20);
 
         HBox axesPanes = new HBox(5);
         HBox.setHgrow(axesPanes, Priority.ALWAYS); // Make the axesPanes responsive
@@ -383,11 +380,9 @@ public class Crop {
         xStartField.textProperty().bindBidirectional(cropRectangle.xProperty(), new NumberStringConverter());
         yStartField.textProperty().bindBidirectional(cropRectangle.yProperty(), new NumberStringConverter());
 
-        xEndField.textProperty().bind(Bindings.createStringBinding(() ->
-                Integer.toString((int) (cropRectangle.getX() + cropRectangle.getWidth())), cropRectangle.xProperty(), cropRectangle.widthProperty()));
+        xEndField.textProperty().bind(Bindings.createStringBinding(() -> Integer.toString((int) (cropRectangle.getX() + cropRectangle.getWidth())), cropRectangle.xProperty(), cropRectangle.widthProperty()));
 
-        yEndField.textProperty().bind(Bindings.createStringBinding(() ->
-                Integer.toString((int) (cropRectangle.getY() + cropRectangle.getHeight())), cropRectangle.yProperty(), cropRectangle.heightProperty()));
+        yEndField.textProperty().bind(Bindings.createStringBinding(() -> Integer.toString((int) (cropRectangle.getY() + cropRectangle.getHeight())), cropRectangle.yProperty(), cropRectangle.heightProperty()));
 
         xStartField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.isEmpty()) {

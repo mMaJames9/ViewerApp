@@ -44,7 +44,7 @@ public class PixelPosition {
         xInput.setPromptText("Enter x coordinate");
         yInput.setPromptText("Enter y coordinate");
 
-        HBox inputBox = new HBox(5);
+        HBox inputBox = new HBox(10);
         inputBox.setAlignment(Pos.CENTER);
         inputBox.getChildren().addAll(new Label("X: "), xInput, new Label("Y: "), yInput);
 

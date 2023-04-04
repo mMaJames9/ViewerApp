@@ -80,5 +80,11 @@ public class Sidebar extends VBox {
                 PixelPosition.showPixelPosition(artboard);
             }
         });
+
+        rSelectorButton.setOnAction(event -> {
+            if (artboard.getImageView() != null) {
+                Segment.showSegmentTool(artboard);
+            }
+        });
     }
 }
