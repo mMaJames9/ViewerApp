@@ -28,15 +28,14 @@ public class Sidebar extends VBox {
         Button rotateButton = createButton("Rotate Tool", FontAwesomeSolid.SYNC_ALT);
         Button rSelectorButton = createButton("Region Selector Tool", FontAwesomeSolid.PENCIL_ALT);
         Button analysisButton = createButton("Analysis Tool", FontAwesomeSolid.CHART_LINE);
-        Button colorizeButton = createButton("Color Tool", FontAwesomeSolid.TINT);
         Button resizeButton = createButton("Resize Tool", FontAwesomeSolid.EXPAND_ALT);
         Button pixelButton = createButton("Pixel position Tool", FontAwesomeSolid.CROSSHAIRS);
         Button textButton = createButton("Text Tool", FontAwesomeSolid.TEXT_WIDTH);
 
         // Create buttons and add them to the sidebar
-        getChildren().addAll(selectButton, zoomButton, cropButton, flipHButton, flipVButton, rotateButton, rSelectorButton, analysisButton, colorizeButton, resizeButton, pixelButton, textButton);
+        getChildren().addAll(selectButton, zoomButton, cropButton, flipHButton, flipVButton, rotateButton, rSelectorButton, analysisButton, resizeButton, pixelButton, textButton);
 
-        setupButtonActions(selectButton, zoomButton, cropButton, flipHButton, flipVButton, rotateButton, rSelectorButton, analysisButton, colorizeButton, resizeButton, pixelButton, textButton);
+        setupButtonActions(selectButton, zoomButton, cropButton, flipHButton, flipVButton, rotateButton, rSelectorButton, analysisButton, resizeButton, pixelButton, textButton);
     }
 
     private Button createButton(String tooltipText, FontAwesomeSolid iconCode) {
@@ -50,7 +49,7 @@ public class Sidebar extends VBox {
         return button;
     }
 
-    private void setupButtonActions(Button selectButton, Button zoomButton, Button cropButton, Button flipHButton, Button flipVButton, Button rotateButton, Button rSelectorButton, Button analysisButton, Button colorizeButton, Button resizeButton, Button pixelButton, Button textButton) {
+    private void setupButtonActions(Button selectButton, Button zoomButton, Button cropButton, Button flipHButton, Button flipVButton, Button rotateButton, Button rSelectorButton, Button analysisButton, Button resizeButton, Button pixelButton, Button textButton) {
         flipHButton.setOnAction(event -> {
             if (artboard.getImageView() != null) {
                 FlipperFX.flipImage(artboard, true);
@@ -84,6 +83,13 @@ public class Sidebar extends VBox {
         rSelectorButton.setOnAction(event -> {
             if (artboard.getImageView() != null) {
                 Segment.showSegmentTool(artboard);
+            }
+        });
+
+        analysisButton.setOnAction(event -> {
+            if (artboard.getImageView() != null) {
+                ImageAnalyzerGUI imageAnalyzer = new ImageAnalyzerGUI(artboard);
+                imageAnalyzer.show();
             }
         });
     }

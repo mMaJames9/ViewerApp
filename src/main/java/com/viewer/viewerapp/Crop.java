@@ -46,7 +46,6 @@ public class Crop {
         cropStage.setResizable(false);
 
         VBox container = new VBox();
-        container.setPadding(new Insets(10));
         container.setAlignment(Pos.CENTER);
         container.getStyleClass().add("crop-modal");
         Pair<Pane, Rectangle> cropPaneAndRectangle = createCropPane(imageView, artboard, cropStage);

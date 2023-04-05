@@ -278,15 +278,20 @@ class ImageSegmentationUtil {
 
         path.closePath();
 
-        // Calculate the meanPixelValue
-        double meanPixelValue = calculateMeanPixelValue(image);
+        // Calculate the min, max, and mean pixel intensities for the entire image
+        double[] minMaxMean = calculateMinMaxMean(image);
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 if (path.contains(x, y)) {
                     Color originalColor = pixelReader.getColor(x, y);
-                    // Pass the meanPixelValue to calculateColorizedColor method
-                    Color colorizedColor = calculateColorizedColor(originalColor, meanPixelValue);
+                    double intensity = (originalColor.getRed() + originalColor.getGreen() + originalColor.getBlue()) / 3;
+
+                    // Normalize the intensity
+                    double normalizedIntensity = (intensity - minMaxMean[0]) / (minMaxMean[1] - minMaxMean[0]);
+
+                    // Apply the color mapping function based on the normalized pixel values
+                    Color colorizedColor = mapNormalizedIntensityToColor(normalizedIntensity);
                     pixelWriter.setColor(x, y, colorizedColor);
                 } else {
                     pixelWriter.setArgb(x, y, pixelReader.getArgb(x, y));
@@ -296,59 +301,47 @@ class ImageSegmentationUtil {
         return colorizedImage;
     }
 
-    private static double calculateMeanPixelValue(Image image) {
+    private static double[] calculateMinMaxMean(Image image) {
         int width = (int) image.getWidth();
         int height = (int) image.getHeight();
         PixelReader pixelReader = image.getPixelReader();
-        long totalPixelValue = 0;
-        long pixelCount = 0;
+
+        double minIntensity = Double.MAX_VALUE;
+        double maxIntensity = Double.MIN_VALUE;
+        double totalIntensity = 0;
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 Color color = pixelReader.getColor(x, y);
-                int grayValue = (int) (0.2989 * (color.getRed() * 255) + 0.5870 * (color.getGreen() * 255) + 0.1140 * (color.getBlue() * 255));
-                totalPixelValue += grayValue;
-                pixelCount++;
+                double intensity = (color.getRed() + color.getGreen() + color.getBlue()) / 3;
+                minIntensity = Math.min(minIntensity, intensity);
+                maxIntensity = Math.max(maxIntensity, intensity);
+                totalIntensity += intensity;
             }
         }
 
-        return (double) totalPixelValue / pixelCount;
+        double meanIntensity = totalIntensity / (width * height);
 
+        return new double[]{minIntensity, maxIntensity, meanIntensity};
     }
 
-    private static Color calculateColorizedColor(Color originalColor, double meanPixelValue) {
-        int redValue = 0, greenValue = 0, blueValue = 0;
-        int grayValue = (int) (0.2989 * (originalColor.getRed() * 255) + 0.5870 * (originalColor.getGreen() * 255) + 0.1140 * (originalColor.getBlue() * 255));
-
-        int[][] thresholds = {{95, 120, 145}, {130, 150, 170}, {140, 155, 170}};
-
-        double[][] factors = {{85.0, 85.0, 85.0}, {85.0, 85.0, 85.0}, {85.5, 85.0, 85.5}};
-
-        int[] meanLimits = {100, 150};
-        int meanIndex = (meanPixelValue < meanLimits[0]) ? 0 : (meanPixelValue < meanLimits[1]) ? 1 : 2;
-
-        for (int i = 0; i < thresholds[meanIndex].length; i++) {
-            if (grayValue <= thresholds[meanIndex][i]) {
-                redValue = (i == 0) ? 255 : (int) (255 * ((thresholds[meanIndex][i] - grayValue) / factors[meanIndex][i]));
-                greenValue = (int) (255 * ((grayValue - (i == 0 ? 0 : thresholds[meanIndex][i - 1])) / factors[meanIndex][i]));
-                break;
-            }
+    private static Color mapNormalizedIntensityToColor(double normalizedIntensity) {
+        if (normalizedIntensity <= 0.2244) {
+            double factor = normalizedIntensity / 0.2244;
+            return new Color(factor, 0, 0, 1);
+        } else if (normalizedIntensity <= 0.4422) {
+            double factor = (normalizedIntensity - 0.2244) / (0.4422 - 0.2244);
+            return new Color(1, factor, 0, 1);
+        } else if (normalizedIntensity <= 0.66) {
+            double factor = (normalizedIntensity - 0.4422) / (0.66 - 0.4422);
+            return new Color(1 - factor, 1, 0, 1);
+        } else if (normalizedIntensity <= 0.83) {
+            double factor = (normalizedIntensity - 0.66) / (0.83 - 0.66);
+            return new Color(0, 1, factor, 1);
+        } else {
+            double factor = (normalizedIntensity - 0.83) / (1 - 0.83);
+            return new Color(0, 1 - factor, 1, 1);
         }
-
-        if (meanIndex == 0 && grayValue > thresholds[meanIndex][2]) {
-            greenValue = (int) (255 * ((210 - grayValue) / 85.0));
-            blueValue = 255;
-        } else if (meanIndex > 0 && grayValue > thresholds[meanIndex][2]) {
-            greenValue = (int) (255 * ((254 - grayValue) / 85.5));
-            blueValue = 255;
-        }
-
-        // Clamp color values within the range 0-255
-        redValue = Math.min(Math.max(redValue, 0), 255);
-        greenValue = Math.min(Math.max(greenValue, 0), 255);
-
-        return Color.rgb(redValue, greenValue, blueValue);
     }
-
 
 }
