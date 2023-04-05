@@ -320,17 +320,9 @@ class ImageSegmentationUtil {
         int redValue = 0, greenValue = 0, blueValue = 0;
         int grayValue = (int) (0.2989 * (originalColor.getRed() * 255) + 0.5870 * (originalColor.getGreen() * 255) + 0.1140 * (originalColor.getBlue() * 255));
 
-        int[][] thresholds = {
-                {95, 120, 145},
-                {130, 150, 170},
-                {140, 155, 170}
-        };
+        int[][] thresholds = {{95, 120, 145}, {130, 150, 170}, {140, 155, 170}};
 
-        double[][] factors = {
-                {85.0, 85.0, 85.0},
-                {85.0, 85.0, 85.0},
-                {85.5, 85.0, 85.5}
-        };
+        double[][] factors = {{85.0, 85.0, 85.0}, {85.0, 85.0, 85.0}, {85.5, 85.0, 85.5}};
 
         int[] meanLimits = {100, 150};
         int meanIndex = (meanPixelValue < meanLimits[0]) ? 0 : (meanPixelValue < meanLimits[1]) ? 1 : 2;
@@ -354,7 +346,6 @@ class ImageSegmentationUtil {
         // Clamp color values within the range 0-255
         redValue = Math.min(Math.max(redValue, 0), 255);
         greenValue = Math.min(Math.max(greenValue, 0), 255);
-        blueValue = Math.min(Math.max(blueValue, 0), 255);
 
         return Color.rgb(redValue, greenValue, blueValue);
     }
