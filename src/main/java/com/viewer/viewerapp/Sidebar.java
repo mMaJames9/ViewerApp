@@ -7,6 +7,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.javafx.FontIcon;
+import org.w3c.dom.Text;
 
 public class Sidebar extends VBox {
 
@@ -86,10 +87,22 @@ public class Sidebar extends VBox {
             }
         });
 
+        textButton.setOnAction(event -> {
+            if (artboard.getImageView() != null) {
+                TextEditor.editText(artboard);
+            }
+        });
+
         analysisButton.setOnAction(event -> {
             if (artboard.getImageView() != null) {
                 ImageAnalyzerGUI imageAnalyzer = new ImageAnalyzerGUI(artboard);
                 imageAnalyzer.show();
+            }
+        });
+
+        resizeButton.setOnAction(event -> {
+            if (artboard.getImageView() != null) {
+                new ImageResize(artboard);
             }
         });
     }

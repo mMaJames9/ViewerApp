@@ -106,7 +106,6 @@ public class ImageAnalyzerGUI {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Analysis Data Saved");
             alert.setHeaderText(null);
-            alert.setContentText("The analysis data has been saved to " + file.getAbsolutePath());
             alert.showAndWait();
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);

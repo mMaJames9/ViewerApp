@@ -1,5 +1,7 @@
 package com.viewer.viewerapp;
 
+import javafx.scene.Node;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -20,6 +22,30 @@ public class Grid extends Pane {
 
         // Draw the initial grid
         drawGrid();
+
+        setupEventFilter();
+    }
+
+    private void setupEventFilter() {
+        addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            Node target = getParent().lookup("#imageView");
+            if (target != null) {
+                MouseEvent newEvent = new MouseEvent(
+                        MouseEvent.MOUSE_CLICKED,
+                        event.getX(), event.getY(),
+                        event.getScreenX(), event.getScreenY(),
+                        event.getButton(), event.getClickCount(),
+                        event.isShiftDown(), event.isControlDown(),
+                        event.isAltDown(), event.isMetaDown(),
+                        event.isPrimaryButtonDown(), event.isMiddleButtonDown(),
+                        event.isSecondaryButtonDown(), event.isSynthesized(),
+                        event.isPopupTrigger(), event.isStillSincePress(),
+                        event.getPickResult()
+                );
+                target.fireEvent(newEvent);
+                event.consume();
+            }
+        });
     }
 
     void drawGrid() {

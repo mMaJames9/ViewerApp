@@ -42,6 +42,7 @@ public class Artboard extends GridPane {
         getChildren().clear();
 
         imageView = new ImageView(image);
+        imageView.setId("imageView");
         imageView.setPreserveRatio(true);
         imageView.setSmooth(true);
 
@@ -50,6 +51,10 @@ public class Artboard extends GridPane {
 
         setConstraints(imageView, 1, 1);
         getChildren().add(imageView);
+
+        // Set the onMouseClicked event handler for the imageView
+        PixelValue pixelValue = new PixelValue(this);
+        imageView.setOnMouseClicked(pixelValue::handleClick);
 
         addRulers();
         addGrid();

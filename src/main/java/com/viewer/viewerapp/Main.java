@@ -1,6 +1,8 @@
 package com.viewer.viewerapp;
 
 import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -12,9 +14,14 @@ import org.kordamp.bootstrapfx.BootstrapFX;
 import java.util.Objects;
 
 public class Main extends Application {
+    private static Label paneInfo;
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    public static Label getPaneInfo() {
+        return paneInfo;
     }
 
     @Override
@@ -70,9 +77,13 @@ public class Main extends Application {
 
     private StackPane createTextPane() {
         StackPane textPane = new StackPane();
-
-        Label paneInfo = new Label("Text information");
         textPane.getStyleClass().add("text-pane");
+        textPane.setAlignment(Pos.BASELINE_RIGHT);
+        textPane.setPadding(new Insets(20, 50, 20, 50));
+
+        paneInfo = new Label("Click on the image to get pixel information");
+        paneInfo.getStyleClass().add("pane-info");
+
         textPane.getChildren().add(paneInfo);
 
         return textPane;

@@ -30,6 +30,7 @@ public class RotationFX {
 
     private static Stage createRotateStage(ImageView imageView, Artboard artboard) {
         Stage rotateStage = new Stage(StageStyle.UTILITY);
+        rotateStage.setTitle("Rotate Image");
         rotateStage.setResizable(false);
 
         double maxDimension = Math.max(imageView.getFitWidth(), imageView.getFitHeight());

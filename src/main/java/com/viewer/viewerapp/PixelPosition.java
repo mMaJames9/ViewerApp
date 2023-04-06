@@ -29,6 +29,7 @@ public class PixelPosition {
 
     private static Stage createPixelPositionStage(ImageView imageView) {
         Stage pixelPositionStage = new Stage(StageStyle.UTILITY);
+        pixelPositionStage.setTitle("Pixel Position");
         pixelPositionStage.setResizable(false);
 
         ImageView previewImageView = new ImageView(imageView.getImage());
