@@ -138,46 +138,51 @@ public class TextEditor {
         });
 
         // Add event handlers for modifying text
-        text.setOnMouseClicked(event -> {
-            if (event.isSecondaryButtonDown()) {
-                // Get the current values
-                String currentFontFamily = text.getFont().getFamily();
-                double currentFontSize = text.getFont().getSize();
-                Color currentColor = (Color) text.getFill();
+        text.setOnContextMenuRequested(event -> {
+            // Get the current values
+            String currentText = text.getText();
+            String currentFontFamily = text.getFont().getFamily();
+            double currentFontSize = text.getFont().getSize();
+            Color currentColor = (Color) text.getFill();
 
-                // Create a context menu for modifying text
-                ContextMenu contextMenu = new ContextMenu();
+            // Create a context menu for modifying text
+            ContextMenu contextMenu = new ContextMenu();
 
-                // Create color picker for modifying text color
-                ColorPicker colorPicker = new ColorPicker(currentColor);
-                colorPicker.setOnAction(e -> {
-                    text.setFill(colorPicker.getValue());
-                    contextMenu.hide();
-                });
+            // Create TextField for modifying text content
+            TextField modifyTextField = new TextField(currentText);
+            modifyTextField.setOnAction(e -> {
+                text.setText(modifyTextField.getText());
+                contextMenu.hide();
+            });
 
-                // Create ComboBox for choosing font family
-                List<String> fontFamilies = Font.getFamilies();
-                ComboBox<String> fontFamilyComboBox = new ComboBox<>(FXCollections.observableArrayList(fontFamilies));
-                fontFamilyComboBox.getSelectionModel().select(currentFontFamily);
-                fontFamilyComboBox.setOnAction(e -> {
-                    text.setFont(Font.font(fontFamilyComboBox.getValue(), currentFontSize));
-                    contextMenu.hide();
-                });
+            // Create color picker for modifying text color
+            ColorPicker colorPicker = new ColorPicker(currentColor);
+            colorPicker.setOnAction(e -> {
+                text.setFill(colorPicker.getValue());
+                contextMenu.hide();
+            });
 
-                // Create Slider for adjusting font size
-                Slider fontSizeSlider = new Slider(10, 72, currentFontSize);
-                fontSizeSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
-                    text.setFont(Font.font(currentFontFamily, newValue.doubleValue()));
-                    contextMenu.hide();
-                });
+            // Create ComboBox for choosing font family
+            List<String> fontFamilies = Font.getFamilies();
+            ComboBox<String> fontFamilyComboBox = new ComboBox<>(FXCollections.observableArrayList(fontFamilies));
+            fontFamilyComboBox.getSelectionModel().select(currentFontFamily);
+            fontFamilyComboBox.setOnAction(e -> {
+                text.setFont(Font.font(fontFamilyComboBox.getValue(), currentFontSize));
+                contextMenu.hide();
+            });
 
-                // Add the color picker, font family ComboBox, and font size Slider to the context menu
-                contextMenu.getItems().addAll(new CustomMenuItem(colorPicker, false), new CustomMenuItem(fontFamilyComboBox, false), new CustomMenuItem(fontSizeSlider, false));
+            // Create Slider for adjusting font size
+            Slider fontSizeSlider = new Slider(10, 72, currentFontSize);
+            fontSizeSlider.valueProperty().addListener((observable, oldValue, newValue) -> {
+                text.setFont(Font.font(currentFontFamily, newValue.doubleValue()));
+                contextMenu.hide();
+            });
 
-                // Show the context menu
-                contextMenu.show(text, event.getScreenX(), event.getScreenY());
-            }
+            // Add the TextField, color picker, font family ComboBox, and font size Slider to the context menu
+            contextMenu.getItems().addAll(new CustomMenuItem(modifyTextField, false), new CustomMenuItem(colorPicker, false), new CustomMenuItem(fontFamilyComboBox, false), new CustomMenuItem(fontSizeSlider, false));
+
+            // Show the context menu
+            contextMenu.show(text, event.getScreenX(), event.getScreenY());
         });
-
     }
 }
